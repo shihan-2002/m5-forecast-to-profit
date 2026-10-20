@@ -1,0 +1,5 @@
+model,series,wall_seconds,hardware,api_cost_usd,note
+Chronos,5748,10,Apple GPU (MPS),0,4 s forecasting + 6 s model loading; no training
+LightGBM,5748,80,10 CPU cores,0,feature building + early-stopping fit + refit
+AutoARIMA,5748,2322,10 CPU cores,0,one model per series; last 730 days
+Claude,224,520,Anthropic API (6 parallel calls),13.54,112 series x 2 conditions (named and blind)

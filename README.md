@@ -1,16 +1,19 @@
-# Forecast to Profit: Turning Walmart Demand Forecasts into Inventory Decisions
+# Can AI Foundation Models Beat LightGBM? Forecasting Walmart Demand
 
 **Group 3:** Charlotte Zhu, Shihan Wang, Jing Chang, Rachel Liu
 UCLA Anderson, Time Series Analysis and Forecasting (Dr. William Yu). Due Oct 26, 2026.
 
-## Question
-Does the most accurate demand forecast also make the most money?
+## Research question
+**Can modern AI foundation models produce more accurate and computationally efficient retail
+demand forecasts than traditional statistical and machine-learning methods?**
 
-Most forecasting projects stop at accuracy (MAE, RMSE). A store manager cares about
-something else: how much to order. Ordering too little loses sales; ordering too much
-wastes food. We forecast daily demand for every food item in Walmart's California
-stores, turn each forecast into an order, and compare models on **profit** as well as
-accuracy.
+LightGBM dominated the M5 forecasting competition. We test it against a classical time series
+model and two AI foundation models that need no training on our data.
+
+- **Part 1 (done):** forecast accuracy and computational efficiency.
+- **Part 2 (planned):** do the forecasts lead to better inventory decisions? (newsvendor ordering)
+
+Report: [Can AI Foundation Models Beat LightGBM? (Part 1)](https://claude.ai/code/artifact/fbff8ef5-6e2a-41bb-81d6-400296d70f3e)
 
 ## Data
 [M5 Forecasting competition](https://www.kaggle.com/competitions/m5-forecasting-accuracy)
@@ -23,37 +26,25 @@ holidays/events, and SNAP (food-stamp) days.
 - Test: d_1942 to d_1969 (28 days, 2016-05-23 to 2016-06-19), the official M5 evaluation window. No model sees it during fitting or tuning.
 
 ## Models
-| Family | Models | Notes |
-|---|---|---|
-| Benchmarks | Seasonal naive (7-day), 28-day moving average | |
-| Classical | AutoETS, AutoARIMA (weekly season) | statsforecast, last 730 days |
-| Intermittent demand | Croston (optimized), ADIDA | For items that often sell zero |
-| Machine learning | LightGBM, one global model | Tweedie loss, lags of 28+ days, rolling means, price and calendar features. Rounds picked by early stopping on the last 28 *training* days. |
-| AI foundation model | Chronos-Bolt (Amazon) | Zero-shot: never trained on our data. Outputs a full forecast distribution. |
-
-## Evaluation
-1. **Accuracy:** WRMSSE (the M5 metric) over six levels: total, store, dept, store x dept, item, item x store. Also MAE, RMSE and bias.
-2. **Profit (newsvendor):** each day the store orders Q units per item. Food is treated as perishable (unsold units are written off at cost). With price p and gross margin m:
-   `profit = p * min(Q, demand) - p(1-m) * Q`.
-   The best order is the **m-quantile** of demand, so the right order depends on the margin, not just the point forecast. Ordering policies:
-   - `point`: order the rounded point forecast (the common default)
-   - `nb`: order the m-quantile of a negative binomial distribution centred on the forecast
-   - `native`: Chronos's own predicted m-quantile
-   Results are reported as a percentage of perfect-foresight profit, for margins from 20% to 80%.
-
-## First results (Oct 12, one 28-day test window)
-| Model | WRMSSE | MAE | Profit at 50% margin, quantile orders |
+| Model | Family | Trained on our data? | Notes |
 |---|---|---|---|
-| LightGBM | **0.646** | 1.547 | $114.6k |
-| AutoETS | 0.661 | 1.548 | **$118.5k** |
-| Seasonal naive | 0.814 | 1.855 | $36.0k |
-| AutoARIMA | 0.892 | 1.563 | $116.6k |
-| Chronos (zero-shot) | 0.949 | **1.523** | $115.8k (own quantiles) |
+| AutoARIMA | Classical statistics | Yes, one model per series | statsforecast, weekly season, last 730 days |
+| LightGBM | Machine learning | Yes, one global model | Tweedie loss, lags of 28+ days, rolling means, price and calendar features; rounds by early stopping on the last 28 training days |
+| Chronos-Bolt (small) | AI foundation model for time series (Amazon) | No (zero-shot) | M5 was held out of its training data |
+| Claude Opus 5.5 | General-purpose LLM (Anthropic) | No (zero-shot) | 112 series only (12 store x dept totals + 100 sampled items), each run "named" and "blind" |
+| Seasonal naive | Benchmark | No | Same weekday last week |
 
-1. **The most accurate model is not the most profitable.** LightGBM has the best WRMSSE, but AutoETS earns the most at 50-65% margins, and LightGBM is not the top earner at any margin below 80%. Chronos ranks 5th on WRMSSE but 1st on MAE, so the choice of metric changes the winner.
-2. **The ordering rule matters far more than the model.** Ordering the point forecast loses money at low margins (about -$175k at a 20% margin). Ordering the margin-quantile breaks even. At a 35% margin it turns a $37k loss into a $39k profit. The gap between the best models is only a few thousand dollars.
-3. **Chronos under-forecasts** (bias -0.24 units/day). That hurts its WRMSSE but helps when margins are thin, because it orders less and wastes less.
-4. The differences between the top models are small and come from a single test window. A rolling backtest over several windows is needed before drawing firm conclusions.
+## Part 1 results (one 28-day test window)
+| Finding | Numbers |
+|---|---|
+| LightGBM is most accurate across all 5,748 series | WRMSSE 0.646 vs AutoARIMA 0.892, Chronos 0.949, seasonal naive 0.814 |
+| Its edge is at aggregate levels; at item level all models are close | Each of the three main models is best on about a third of items |
+| Claude is most accurate on the 12 store x dept totals | WRMSSE 0.58, about 8% better than the next model |
+| Fitting totals directly matters as much as the model | AutoARIMA 0.900 -> 0.644, Chronos 0.969 -> 0.637 when fitted on totals instead of summed |
+| No sign Claude recalls the public data | Named 0.579 vs blind 0.583 on totals |
+| Chronos is by far the most efficient | 10 s for all series vs LightGBM 80 s, AutoARIMA 39 min, Claude about 3.7 h and $347 (estimated) |
+
+Caveats: one test window, and Claude on 112 of 5,748 series. A rolling backtest is the next step.
 
 ## How to run
 ```bash
@@ -61,49 +52,49 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 mkdir -p data/raw && curl -L -o data/raw/m5.zip https://github.com/Nixtla/m5-forecasts/raw/main/datasets/m5.zip
 unzip data/raw/m5.zip -d data/raw     # raw data is not in the repo (about 450 MB)
 cd src
-../.venv/bin/python prep.py            # build data/processed (about 1 min)
-../.venv/bin/python models_stat.py     # classical models (about 40 min on 10 cores)
-../.venv/bin/python models_lgb.py      # LightGBM (about 10 min)
-../.venv/bin/python models_chronos.py  # Chronos-Bolt (downloads about 200 MB of weights the first time)
-../.venv/bin/python evaluate.py        # writes outputs/results/*.csv
+../.venv/bin/python prep.py              # build data/processed (about 1 min)
+../.venv/bin/python models_stat.py       # AutoARIMA and other classical models (about 40-50 min on 10 cores)
+../.venv/bin/python models_lgb.py        # LightGBM (about 1-2 min)
+../.venv/bin/python models_chronos.py    # Chronos-Bolt (downloads about 200 MB of weights the first time)
+../.venv/bin/python evaluate.py          # accuracy tables -> outputs/results/
+../.venv/bin/python models_direct_agg.py # AutoARIMA, Chronos, naive fitted directly on the 12 totals
+../.venv/bin/python models_claude.py     # Claude forecasts (needs an API key; about $14)
+../.venv/bin/python evaluate_claude.py   # Claude comparison -> outputs/results/claude_accuracy.csv
 ```
-Then open `notebooks/analysis.ipynb` for the charts.
+Claude needs an Anthropic API key in a `.env` file at the project root (`ANTHROPIC_API_KEY="..."`).
+The file is git-ignored. Saved Claude responses are in `outputs/claude_raw/`, so you can skip
+`models_claude.py` and still run `evaluate_claude.py`.
+
+Then open `notebooks/01_forecast_accuracy.ipynb`; it rebuilds every chart into `outputs/figures/part1/`.
 
 ## Project layout
 ```
-data/raw/          M5 csv files (not committed)
-data/processed/    CA/FOODS slice in long format
-src/               pipeline scripts (config, prep, models_*, evaluate)
-outputs/forecasts/ one parquet file per model family
-outputs/results/   accuracy and profit tables
-notebooks/         analysis and charts for the report and slides
+data/raw/            M5 csv files (not committed)
+data/processed/      CA/FOODS slice in long format (not committed)
+src/                 pipeline scripts (config, prep, models_*, evaluate*)
+outputs/forecasts/   one parquet file per model family
+outputs/claude_raw/  every Claude response (JSON), for reproducibility
+outputs/results/     accuracy, Claude comparison and timing tables
+outputs/figures/     charts (part1/ = forecast accuracy)
+notebooks/           01_forecast_accuracy.ipynb (Part 1); analysis.ipynb (early profit draft, Part 2)
 ```
 
-## Still to do
-- [ ] Streamlit dashboard: pick a margin, store and department, then compare models on profit vs accuracy
-- [ ] Claude "demand-planning assistant" in the dashboard that explains why an order quantity was chosen
-- [ ] Optional: hierarchical reconciliation (bottom-up vs MinT) at store and dept levels
+## Next steps
+- [ ] Rolling-origin backtest over 3-4 earlier 28-day windows
+- [ ] Confirm in the M5 paper the share of top teams that used LightGBM
+- [ ] Part 2: each model's own uncertainty (ARIMA intervals, LightGBM quantile regression, Chronos and Claude quantiles), scored by pinball loss and profit
 - [ ] 10-slide deck and recorded demo
-- [ ] Section on how we used AI tools (required by the brief)
-
-## Suggested roles
-| Person | Owns |
-|---|---|
-| A | Data and classical models, accuracy section |
-| B | LightGBM and Chronos, model comparison |
-| C | Newsvendor/profit analysis, business story |
-| D | Dashboard, Claude assistant, slides and demo |
 
 ## Timeline
 | Dates | Milestone |
 |---|---|
-| Oct 12-14 | Pipeline runs end to end (done: first pass) |
-| Oct 15-18 | Review results, improve models, sensitivity checks (salvage value, carry-over) |
-| Oct 19-22 | Dashboard and Claude assistant |
-| Oct 23-25 | Slides, report/README, demo recording |
+| Oct 12-20 | Part 1 built and written up (done) |
+| Oct 21-23 | Rolling backtest; Part 2 if time allows |
+| Oct 23-25 | Slides, final report, demo recording |
 | Oct 26 | Submit |
 
 ## Limitations
-- Demand is measured by sales, so stockout days look like zero demand.
-- Perishable, no-carry-over inventory is a simplification. A sensitivity check with salvage value is planned.
-- Chronos may have seen M5 during pre-training, since M5 is public. Check the Chronos paper's list of training data and report it.
+- One 28-day test window; Claude tested on 112 series.
+- Demand is measured by sales, so stock-out days look like zero demand.
+- LightGBM uses one fixed setting; M5 winners tuned and ensembled many models.
+- Claude's forecasts can vary slightly between runs.

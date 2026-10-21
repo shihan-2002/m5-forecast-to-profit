@@ -196,6 +196,9 @@ document.getElementById("tabs").addEventListener("click", e=>{
   if(!drawn[b.dataset.t]){ drawn[b.dataset.t]=true; ({explorer:drawExplorer,compare:drawCompare,ailab:drawAILab,planner:drawPlanner,ask:drawAsk})[b.dataset.t]?.(); }
 });
 
+// ---------- open a tab from the address, e.g. index.html#planner
+window.addEventListener("load", ()=>{ const t=(location.hash||"").slice(1); const b=document.querySelector(`#tabs button[data-t="${t}"]`); if(b) b.click(); });
+
 // ---------- overview
 (function(){
   const acc = Object.fromEntries(D.accuracy.map(a=>[a.model,a]));

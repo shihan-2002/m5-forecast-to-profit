@@ -2640,7 +2640,7 @@ Figure 3: WRMSSE on all 5,748 series (lower is better). The dashed line at 1 is
 </div>
 </div>
 </div>
-<p>Among single models, LightGBM has the lowest WRMSSE and RMSE, with AutoETS close behind; both beat the benchmark. Their unweighted average is better than either (0.604), echoing the M5 finding that combinations of forecasts are hard to beat <span class="citation" data-cites="makridakis2022">(<a href="#ref-makridakis2022" role="doc-biblioref">Makridakis, Spiliotis, and Assimakopoulos 2022</a>)</span>. The two models make different kinds of errors, so averaging cancels part of them. Chronos has the lowest MAE but the weakest WRMSSE: MAE rewards getting the typical day right, while WRMSSE punishes errors that add up across items.</p>
+<p>Among single models, LightGBM has the lowest WRMSSE and RMSE, with AutoETS close behind; both beat the benchmark. Their unweighted average is better than either (0.604), echoing the M5 finding that combinations of forecasts are hard to beat <span class="citation" data-cites="makridakis2022">(<a href="#ref-makridakis2022" role="doc-biblioref">Makridakis, Spiliotis, and Assimakopoulos 2022</a>)</span>. The two models make different kinds of errors, so averaging cancels part of them. Chronos has the lowest MAE of the single models but the weakest WRMSSE: MAE rewards getting the typical day right, while WRMSSE punishes errors that add up across items.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div id="fig-test" class="quarto-float quarto-figure quarto-figure-center anchored">

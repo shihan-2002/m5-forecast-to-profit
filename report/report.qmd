@@ -213,7 +213,7 @@ acc |>
   labs(title = "Averaging AutoETS and LightGBM beats every single model", x = "WRMSSE", y = NULL)
 ```
 
-Among single models, LightGBM has the lowest WRMSSE and RMSE, with AutoETS close behind; both beat the benchmark. Their unweighted average is better than either (`r f3(w("Ensemble"))`), echoing the M5 finding that combinations of forecasts are hard to beat [@makridakis2022]. The two models make different kinds of errors, so averaging cancels part of them. Chronos has the lowest MAE but the weakest WRMSSE: MAE rewards getting the typical day right, while WRMSSE punishes errors that add up across items.
+Among single models, LightGBM has the lowest WRMSSE and RMSE, with AutoETS close behind; both beat the benchmark. Their unweighted average is better than either (`r f3(w("Ensemble"))`), echoing the M5 finding that combinations of forecasts are hard to beat [@makridakis2022]. The two models make different kinds of errors, so averaging cancels part of them. Chronos has the lowest MAE of the single models but the weakest WRMSSE: MAE rewards getting the typical day right, while WRMSSE punishes errors that add up across items.
 
 ```{r fig-test}
 #| fig-cap: "Total daily units across all items in the test window: actual (black) against each model's summed item forecasts."

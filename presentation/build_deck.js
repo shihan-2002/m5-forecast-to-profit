@@ -286,7 +286,7 @@ async function main() {
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Business insight and demo" });
   s.addText("Demo: Shelf Signal v2 dashboard", { placeholder: "title" });
   const SHOT = process.argv[4];
-  const LIVE = "https://claude.ai/artifact/UidMSyMKYt3WVTaom5VEsP#planner";
+  const LIVE = "https://shihan-2002.github.io/shelf-signal-dashboard/#planner";
   s.addShape(pres.shapes.RECTANGLE, { x: 0.6, y: 1.5, w: 7.2, h: 4.78, fill: { color: "FFFFFF" }, line: { color: HEX.line, width: 1 }, objectName: "screenshot frame" });
   s.addImage({ path: SHOT, x: 0.62, y: 1.52, w: 7.16, h: 4.74, hyperlink: { url: LIVE, tooltip: "Open the live dashboard" },
     altText: "Shelf Signal order planner: demand distribution, order quantity and profit by model", objectName: "dashboard screenshot" });
@@ -307,7 +307,7 @@ async function main() {
   });
   text(s, "Click the screenshot or the link to switch to the browser; Cmd+Tab back to the slides. Backup: screen recording.",
        { x: 8.4, y: 5.95, w: 4.3, h: 0.6, fontSize: 12, italic: true, color: HEX.grey, valign: "top" });
-  s.addNotes("SPEAKER 4 (1:15)\n\n[LIVE DEMO. If the connection fails, play the screen recording.]\n\nThis is Shelf Signal version 2, which extends our teammate's original dashboard with all of this project's models. First, in the Forecast explorer, I pick a series, say a store's dairy department, and replay each model's forecast against what actually sold.\n\nSecond, in the Order planner, I keep the forecast fixed and change the profit margin. Watch the recommended order: at a low margin it sits near the 20th percentile of demand, and as the margin rises it moves toward the 80th. The table below scores every model's orders against actual sales. Same forecast, different decision.\n\nThird, note that actual sales are only used to evaluate the forecast afterwards; the forecasts never see the test days.\n\nHOW TO DEMO: in Slide Show mode, click the screenshot (or 'Open live dashboard'). The browser opens on the Order planner. Do the demo, then press Cmd+Tab to return to PowerPoint. Before presenting: open the link once and sign in, so it loads instantly; keep the screen recording ready as a backup.\n\nTRANSITION: To wrap up.");
+  s.addNotes("SPEAKER 4 (1:15)\n\n[LIVE DEMO. If the connection fails, play the screen recording.]\n\nThis is Shelf Signal version 2, which extends our teammate's original dashboard with all of this project's models. First, in the Forecast explorer, I pick a series, say a store's dairy department, and replay each model's forecast against what actually sold.\n\nSecond, in the Order planner, I keep the forecast fixed and change the profit margin. Watch the recommended order: at a low margin it sits near the 20th percentile of demand, and as the margin rises it moves toward the 80th. The table below scores every model's orders against actual sales. Same forecast, different decision.\n\nThird, note that actual sales are only used to evaluate the forecast afterwards; the forecasts never see the test days.\n\nHOW TO DEMO: in Slide Show mode, click the screenshot (or 'Open live dashboard'). The browser opens on the Order planner. Do the demo, then press Cmd+Tab to return to PowerPoint. Before presenting: open the link once so it loads instantly; keep the screen recording ready as a backup.\n\nTRANSITION: To wrap up.");
 
   s = pres.addSlide({ masterName: "Closing Dark", sectionTitle: "Business insight and demo" });
   s.addText("Takeaways", { placeholder: "title" });

@@ -67,7 +67,7 @@ The file is git-ignored. Saved Claude responses are in `outputs/claude_raw/`, so
 
 Then open `notebooks/01_forecast_accuracy.ipynb`; it rebuilds every chart into `outputs/figures/part1/`.
 
-**Dashboard (Shelf Signal v2):**
+**Dashboard (Shelf Signal v2):** live at https://shihan-2002.github.io/shelf-signal-dashboard/ (deployed from the `shelf-signal-dashboard` repo; after rebuilding, copy `docs/index.html` there as `index.html` and push).
 ```bash
 cd src && ../.venv/bin/python models_ensemble.py && ../.venv/bin/python export_dashboard.py   # writes docs/index.html
 ```

@@ -77,7 +77,7 @@ def main():
     for level, keys, fixed_label in levels:
         k = keys or ["_all"]
         tr = train_all.assign(_all="all").groupby(k + ["d_num"]).y.sum().reset_index()
-        te = joined.assign(_all="all").groupby(k + ["ds"])[["y"] + MODELS].sum().reset_index()
+        te = joined.assign(_all="all").groupby(k + ["ds"], observed=True)[["y"] + MODELS].sum().reset_index()
         for key, g in te.groupby(k, observed=True):
             key = key if isinstance(key, tuple) else (key,)
             mask = np.logical_and.reduce([tr[c] == v for c, v in zip(k, key)])

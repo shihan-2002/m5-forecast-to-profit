@@ -1,0 +1,21 @@
+$if(has-frontmatter)$
+\frontmatter
+$endif$
+$if(title)$
+\begin{center}
+{\fontsize{14pt}{17pt}\selectfont\bfseries $title$\par}
+\vspace{0.6em}
+$if(subtitle)$
+{\fontsize{12pt}{15pt}\selectfont\bfseries $subtitle$\par}
+\vspace{1em}
+$endif$
+$if(course)$
+{\fontsize{12pt}{15pt}\selectfont $course$\par}
+\vspace{0.6em}
+$endif$
+{\fontsize{12pt}{15pt}\selectfont $for(authors)$$it.name.literal$$sep$, $endfor$\par}
+\vspace{0.3em}
+{\fontsize{12pt}{15pt}\selectfont $date$\par}
+\end{center}
+\vspace{1em}
+$endif$

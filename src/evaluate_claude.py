@@ -17,7 +17,7 @@ import pandas as pd
 from config import FORECASTS, ROOT, LAST_TRAIN_D
 
 RESULTS = ROOT / "outputs" / "results"
-BASE = ["SeasonalNaive", "AutoARIMA", "LightGBM", "Chronos"]
+BASE = ["SeasonalNaive", "AutoARIMA", "AutoETS", "LightGBM", "Ensemble", "Chronos"]
 
 
 def scale_and_weight(train):
@@ -72,7 +72,7 @@ def main():
     ag = ag.rename(columns={"agg_id": "unique_id"}).merge(wide, on=["unique_id", "ds"], how="inner")
     ag = ag.rename(columns={m: f"{m} (sum of items)" for m in BASE})
     direct = pd.read_parquet(FORECASTS / "direct_agg.parquet")
-    direct = direct.rename(columns={m: f"{m} (direct)" for m in ["SeasonalNaive", "AutoARIMA", "Chronos"]})
+    direct = direct.rename(columns={m: f"{m} (direct)" for m in ["SeasonalNaive", "AutoARIMA", "AutoETS", "Chronos"]})
     ag = ag.merge(direct, on=["unique_id", "ds"], how="inner")
     agg_models = [c for c in ag.columns if c not in ("unique_id", "ds", "y")]
     tr = train.assign(unique_id=train.dept_id.astype(str) + "_" + train.store_id.astype(str))

@@ -1,0 +1,327 @@
+const pptxgen = require("pptxgenjs");
+const React = require("react");
+const ReactDOMServer = require("react-dom/server");
+const sharp = require("sharp");
+const fa = require("react-icons/fa6");
+const fs = require("fs");
+const path = require("path");
+const { applyTheme } = require(process.argv[3]);
+
+const OUT = process.argv[2];
+const DATA = JSON.parse(fs.readFileSync(path.join(__dirname, "data.json"), "utf8"));
+
+// Model colours match the report charts
+const HEX = {
+  navy: "1B2A41", ink: "1F2328", grey: "6B6A66", light: "EEF1F5", line: "D9DCE1", tint: "2A3B55",
+  lgb: "2A78D6", ens: "0F5C73", chronos: "EB6834", arima: "1BAF7A", ets: "D55181", claude: "4A3AA7", naive: "9A9993", amber: "F2B33D",
+};
+const THEME = {
+  name: "Group 3 Forecasting", headFontFace: "Cambria", bodyFontFace: "Calibri",
+  colors: { dk1: HEX.ink, lt1: "FFFFFF", dk2: HEX.navy, lt2: HEX.light, accent1: HEX.lgb, accent2: HEX.chronos,
+            accent3: HEX.arima, accent4: HEX.claude, accent5: HEX.ets, accent6: HEX.amber, hlink: HEX.lgb, folHlink: HEX.claude },
+};
+const famColor = name => {
+  if (name.startsWith("Claude")) return HEX.claude;
+  if (name.startsWith("LightGBM")) return HEX.lgb;
+  if (name.startsWith("Ensemble")) return HEX.ens;
+  if (name.startsWith("AutoETS")) return HEX.ets;
+  if (name.startsWith("AutoARIMA")) return HEX.arima;
+  if (name.startsWith("Chronos")) return HEX.chronos;
+  return HEX.naive;
+};
+const pale = { [HEX.lgb]: "AFCDF2", [HEX.ets]: "EDB9CC", [HEX.arima]: "A6DCC6", [HEX.chronos]: "F6BFA6", [HEX.naive]: "D3D2CE", [HEX.ens]: "9FC0CB", [HEX.claude]: "B8B1E3" };
+
+async function icon(Comp, color = "FFFFFF") {
+  const svg = ReactDOMServer.renderToStaticMarkup(React.createElement(Comp, { color: "#" + color, size: 256 }));
+  return "image/png;base64," + (await sharp(Buffer.from(svg)).png().toBuffer()).toString("base64");
+}
+
+async function main() {
+  const pres = new pptxgen();
+  pres.layout = "LAYOUT_WIDE";
+  pres.title = "Can AI Foundation Models Beat Traditional Statistical Models?";
+  pres.author = "Group 3";
+  pres.theme = { headFontFace: THEME.headFontFace, bodyFontFace: THEME.bodyFontFace };
+  const C = pres.SchemeColor;
+
+  pres.defineSlideMaster({
+    title: "Title Dark", background: { color: C.text2 },
+    objects: [
+      { placeholder: { options: { name: "title", type: "title", x: 0.7, y: 0.6, w: 11.9, h: 1.2, fontSize: 44, bold: true,
+          color: C.background1, valign: "bottom", align: "left" }, text: "" } },
+      { placeholder: { options: { name: "body", type: "body", x: 0.7, y: 1.85, w: 11.9, h: 0.6, fontSize: 20,
+          color: C.background2, valign: "top", align: "left" }, text: "" } },
+    ],
+  });
+  pres.defineSlideMaster({
+    title: "Content", background: { color: C.background1 },
+    objects: [
+      { placeholder: { options: { name: "title", type: "title", x: 0.6, y: 0.35, w: 12.1, h: 0.95, fontSize: 34, bold: true,
+          color: C.text2, valign: "middle", align: "left" }, text: "" } },
+      { text: { text: "Group 3 · Time Series Analysis and Forecasting · UCLA Anderson",
+                options: { x: 0.6, y: 7.0, w: 8, h: 0.3, fontSize: 10, color: C.text2, margin: 0 } } },
+    ],
+    slideNumber: { x: 12.2, y: 7.0, w: 0.6, h: 0.3, fontSize: 10, color: C.text2, align: "right" },
+  });
+  pres.defineSlideMaster({
+    title: "Closing Dark", background: { color: C.text2 },
+    objects: [
+      { placeholder: { options: { name: "title", type: "title", x: 0.6, y: 0.35, w: 12.1, h: 0.95, fontSize: 34, bold: true,
+          color: C.background1, valign: "middle", align: "left" }, text: "" } },
+    ],
+    slideNumber: { x: 12.2, y: 7.0, w: 0.6, h: 0.3, fontSize: 10, color: C.background2, align: "right" },
+  });
+
+  const I = {};
+  for (const [k, comp] of Object.entries({ arima: fa.FaChartLine, ets: fa.FaWaveSquare, lgb: fa.FaTree, chronos: fa.FaHourglassHalf,
+      claude: fa.FaBrain, naive: fa.FaRotateLeft, history: fa.FaClockRotateLeft, forecast: fa.FaChartLine, order: fa.FaCartShopping,
+      shelf: fa.FaStore, warn: fa.FaTriangleExclamation, blind: fa.FaEyeSlash, shuffle: fa.FaShuffle, coins: fa.FaCoins,
+      code: fa.FaCode, play: fa.FaPlay, sliders: fa.FaSliders, check: fa.FaClipboardCheck, layers: fa.FaLayerGroup, clock: fa.FaStopwatch })) {
+    I[k] = await icon(comp);
+  }
+  const badge = (s, img, color, x, y, d, name) => {
+    s.addShape(pres.shapes.OVAL, { x, y, w: d, h: d, fill: { color }, line: { color, width: 0 }, objectName: name + " circle" });
+    s.addImage({ data: img, x: x + d * 0.24, y: y + d * 0.24, w: d * 0.52, h: d * 0.52, objectName: name + " icon" });
+  };
+  const text = (s, t, o) => s.addText(t, { isTextBox: true, margin: 0, ...o });
+  const card = (s, x, y, w, h, name, fill = C.background2) => s.addShape(pres.shapes.ROUNDED_RECTANGLE,
+    { x, y, w, h, rectRadius: 0.12, fill: { color: fill }, line: { color: fill }, objectName: name });
+  const chartText = { catAxisLabelFontFace: "+mn-lt", valAxisLabelFontFace: "+mn-lt", dataLabelFontFace: "+mn-lt",
+    titleFontFace: "+mn-lt", legendFontFace: "+mn-lt", catAxisLabelColor: HEX.grey, valAxisLabelColor: HEX.grey,
+    catAxisLabelFontSize: 12, valAxisLabelFontSize: 11, dataLabelFontSize: 12, dataLabelColor: HEX.ink,
+    valGridLine: { color: HEX.line, size: 0.5 }, catGridLine: { style: "none" }, titleColor: HEX.ink, titleFontSize: 14 };
+  // One series per bar colour, zeros hidden, so each bar keeps its model's colour
+  const colouredBars = (rows, colorOf) => {
+    const colors = [...new Set(rows.map(r => colorOf(r)))];
+    return { colors, series: colors.map(c => ({ name: c, labels: rows.map(r => r[0]), values: rows.map(r => (colorOf(r) === c ? r[1] : 0)) })) };
+  };
+  const hbar = (s, rows, colorOf, o) => {
+    const { colors, series } = colouredBars(rows, colorOf);
+    s.addChart(pres.charts.BAR, series, { ...chartText, barDir: "bar", barGrouping: "stacked", chartColors: colors,
+      catAxisOrientation: "maxMin", showValue: true, dataLabelPosition: "inEnd", dataLabelFormatCode: "0.000;;;",
+      dataLabelColor: "FFFFFF", valAxisMinVal: 0, valAxisMaxVal: 1, valAxisLabelFormatCode: "0.0", showLegend: false, ...o });
+  };
+
+  // =============== Speaker 1: question, data and validation
+  pres.addSection({ title: "Question and data" });
+  let s = pres.addSlide({ masterName: "Title Dark", sectionTitle: "Question and data" });
+  s.addText("Can AI Foundation Models Beat Traditional Statistical Models?", { placeholder: "title" });
+  s.addText("Retail forecasting has to balance accuracy, efficiency and business value", { placeholder: "body" });
+  [["Can pre-trained AI forecast as well as traditional methods, and faster?", HEX.claude],
+   ["Does a better forecast mean a better replenishment decision?", HEX.amber]].forEach(([q, col], i) => {
+    const x = 0.7 + i * 6.05;
+    card(s, x, 2.75, 5.85, 1.35, "question " + (i + 1), HEX.tint);
+    text(s, String(i + 1), { x: x + 0.3, y: 2.75, w: 0.6, h: 1.35, fontSize: 40, bold: true, color: col, fontFace: THEME.headFontFace, valign: "middle" });
+    text(s, q, { x: x + 1.0, y: 2.75, w: 4.6, h: 1.35, fontSize: 18, color: C.background1, valign: "middle" });
+  });
+  [["Sales history", I.history], ["Forecast", I.forecast], ["Order", I.order], ["Shelf", I.shelf]].forEach(([lab, img], i) => {
+    const x = 1.2 + i * 3.0;
+    badge(s, img, i === 1 ? HEX.lgb : i === 2 ? HEX.amber : "3A4D6B", x, 4.55, 0.85, lab);
+    text(s, lab, { x: x - 0.5, y: 5.5, w: 1.85, h: 0.4, fontSize: 15, color: C.background2, align: "center" });
+    if (i < 3) text(s, "→", { x: x + 1.3, y: 4.55, w: 1.2, h: 0.85, fontSize: 30, color: HEX.naive, align: "center", valign: "middle" });
+  });
+  text(s, "Group 3: Charlotte Zhu, Shihan Wang, Jing Chang, Rachel Liu · Time Series Analysis and Forecasting · UCLA Anderson",
+       { x: 0.7, y: 6.6, w: 11.9, h: 0.4, fontSize: 13, color: C.background2 });
+  s.addNotes("SPEAKER 1 (0:45)\n\nGood afternoon, we're Group 3. A retailer's forecast has to do three jobs: be accurate, be cheap and fast enough to run every day for thousands of products, and lead to good stocking decisions.\n\nLightGBM, a machine-learning method, won Walmart's M5 forecasting competition and became the standard. Since then, AI models pre-trained on huge datasets can forecast with no training at all. So we ask two questions. Can pre-trained AI forecast as well as traditional methods, and faster? And does a better forecast actually mean a better replenishment decision?\n\nTRANSITION: Here is the data and how we tested.");
+
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Question and data" });
+  s.addText("5,748 daily series, one 28-day test window", { placeholder: "title" });
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.6, y: 1.45, w: 10.2, h: 0.75, rectRadius: 0.08, fill: { color: HEX.navy }, line: { color: HEX.navy }, objectName: "train bar" });
+  text(s, "Training: Jan 29, 2011 – May 22, 2016 (1,941 days) · models fitted and tuned here",
+       { x: 0.85, y: 1.45, w: 9.8, h: 0.75, fontSize: 15, bold: true, color: "FFFFFF", valign: "middle" });
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 10.9, y: 1.45, w: 1.8, h: 0.75, rectRadius: 0.08, fill: { color: HEX.amber }, line: { color: HEX.amber }, objectName: "test bar" });
+  text(s, "Test: 28 days", { x: 10.9, y: 1.45, w: 1.8, h: 0.75, fontSize: 15, bold: true, color: HEX.ink, align: "center", valign: "middle" });
+  text(s, "May 23 – Jun 19, 2016, never seen by any model. LightGBM tuning used only the last 28 training days.",
+       { x: 0.6, y: 2.3, w: 12.1, h: 0.35, fontSize: 13, color: HEX.grey });
+  s.addChart(pres.charts.LINE, [{ name: "Weekly units", labels: DATA.weekly.labels, values: DATA.weekly.values }], {
+    x: 0.6, y: 2.85, w: 7.4, h: 3.9, ...chartText, chartColors: [HEX.navy], lineSize: 1.5, lineDataSymbol: "none",
+    showLegend: false, showTitle: true, title: "Weekly food units sold, 4 California stores", valAxisLabelFormatCode: "#,##0",
+    catAxisLabelFrequency: 52, catAxisLabelRotate: 0, catAxisMajorTickMark: "none", objectName: "weekly sales chart",
+  });
+  [["4 stores × 1,437 items", "California, food category = 5,748 item × store series"],
+   ["WRMSSE", "The official M5 score: scaled, sales-weighted error; below 1 beats naive"],
+   ["One test window", "All results come from a single 28 days; rankings could shift"]].forEach(([h, b], i) => {
+    const y = 2.95 + i * 1.3;
+    card(s, 8.4, y, 4.3, 1.15, "data card " + i);
+    text(s, h, { x: 8.65, y: y + 0.1, w: 3.9, h: 0.45, fontSize: 18, bold: true, color: i === 2 ? HEX.chronos : C.text2, fontFace: THEME.headFontFace });
+    text(s, b, { x: 8.65, y: y + 0.55, w: 3.9, h: 0.55, fontSize: 13, color: C.text1, valign: "top" });
+  });
+  s.addNotes("SPEAKER 1 (1:15)\n\nWe used Walmart's M5 data: the four California stores and all 1,437 food items, so 5,748 daily series, each one item in one store.\n\nThe split is simple. Every model is trained on data up to May 22, 2016, and forecasts the next 28 days, the official M5 test window. No model sees those days. The one model we tuned, LightGBM, was tuned only on the last 28 days of the training period.\n\nWe score with WRMSSE, the competition's own metric. It scales each product's error by how hard that product is to forecast and weights it by dollar sales; lower is better, and below one beats a naive forecast.\n\nOne caveat up front: everything comes from a single 28-day window, so close rankings could shift in another month.\n\nTRANSITION: Speaker 2 will introduce the models.");
+
+  // =============== Speaker 2: statistics, ML and time series foundation models
+  pres.addSection({ title: "Models and results" });
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Models and results" });
+  s.addText("Five models plus a simple average", { placeholder: "title" });
+  const hdr = ["Model", "Family", "How it is fitted", "What it sees"].map(t => ({ text: t, options: { bold: true, color: "FFFFFF", fill: { color: HEX.navy } } }));
+  const rowsM = [
+    ["AutoETS", HEX.ets, "Statistics", "One model per series (exponential smoothing)", "Own history"],
+    ["AutoARIMA", HEX.arima, "Statistics", "One model per series (seasonal ARIMA)", "Own history"],
+    ["LightGBM", HEX.lgb, "Machine learning", "One model trained across all items, predicts each item", "History + price, calendar, SNAP"],
+    ["Chronos", HEX.chronos, "AI foundation model", "Pre-trained by Amazon, zero-shot: no training on our data", "Own history"],
+    ["Ensemble", HEX.ens, "Combination", "Unweighted average of AutoETS and LightGBM", "Their two forecasts"],
+    ["Seasonal naive", HEX.naive, "Benchmark", "Repeats the same weekday last week", "Last week"],
+  ].map(([m, col, fam, fit, sees]) => [
+    { text: m, options: { bold: true, color: col } }, { text: fam }, { text: fit }, { text: sees }]);
+  s.addTable([hdr, ...rowsM], { x: 0.6, y: 1.5, w: 12.1, colW: [2.1, 2.4, 4.6, 3.0], fontSize: 15, color: HEX.ink,
+    border: { type: "solid", pt: 0.75, color: HEX.line }, rowH: 0.56, valign: "middle", margin: 0.08, objectName: "models table" });
+  card(s, 0.6, 5.75, 12.1, 0.85, "inputs note");
+  text(s, [{ text: "Inputs differ: ", options: { bold: true } },
+           { text: "AutoETS, AutoARIMA and Chronos see only each series' own history; LightGBM also sees prices and the calendar." }],
+       { x: 0.9, y: 5.75, w: 11.6, h: 0.85, fontSize: 15, color: C.text2, valign: "middle" });
+  s.addNotes("SPEAKER 2 (1:00)\n\nWe compared five models. AutoETS and AutoARIMA are classic time series models: they fit one model to each product's own history, with a weekly cycle.\n\nLightGBM is the M5 winner's approach: one machine-learning model trained across all products at once, which then predicts each product. It also sees prices, holidays and food-stamp days.\n\nChronos is Amazon's pre-trained AI model for time series. It was trained on about 100 billion data points from other domains and forecasts our data zero-shot, with no training. And seasonal naive, 'same weekday last week', is the benchmark.\n\nNote that the inputs differ: only LightGBM sees prices and the calendar.\n\nTRANSITION: So how accurate were they?");
+
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Models and results" });
+  s.addText("Averaging AutoETS + LightGBM beats every model", { placeholder: "title" });
+  const accRows = [["Ensemble", DATA.acc.Ensemble], ["LightGBM", DATA.acc.LightGBM], ["AutoETS", DATA.acc.AutoETS], ["Seasonal naive", DATA.acc.SeasonalNaive],
+                   ["AutoARIMA", DATA.acc.AutoARIMA], ["Chronos", DATA.acc.Chronos]];
+  hbar(s, accRows, r => famColor(r[0]), { x: 0.6, y: 1.5, w: 7.6, h: 4.9, barGapWidthPct: 55, showTitle: true,
+    title: "WRMSSE, all 5,748 series (lower is better)", objectName: "WRMSSE chart" });
+  [["0.604", "Ensemble: best overall, no tuning", HEX.ens], ["0.646", "LightGBM: best single model", HEX.lgb],
+   ["0.661", "AutoETS: close behind", HEX.ets]].forEach(([big, lab, col], i) => {
+    const y = 1.6 + i * 1.6;
+    card(s, 8.6, y, 4.1, 1.4, "acc stat " + i);
+    text(s, big, { x: 8.85, y: y + 0.1, w: 3.6, h: 0.75, fontSize: 38, bold: true, color: col, fontFace: THEME.headFontFace });
+    text(s, lab, { x: 8.85, y: y + 0.85, w: 3.7, h: 0.45, fontSize: 14, color: C.text1 });
+  });
+  s.addNotes("SPEAKER 2 (1:00)\n\nAcross all 5,748 series, LightGBM was the most accurate single model, with a WRMSSE of 0.646. AutoETS, a much simpler statistical model, was close behind at 0.661. These two were the only single models to beat the seasonal-naive benchmark at 0.814; AutoARIMA scored 0.89 and Chronos 0.95.\n\nThe best result came from simply averaging AutoETS and LightGBM: 0.604, better than either, with no tuning. The two make different kinds of errors, so averaging cancels part of them. Our teammate's Shelf Signal study found the same thing on a different store and item set.\n\nTRANSITION: But the overall score hides an important pattern.");
+
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Models and results" });
+  s.addText("Rankings change by level; speed differs 200×", { placeholder: "title" });
+  const L = DATA.levels;
+  s.addChart(pres.charts.LINE, [
+    { name: "LightGBM", labels: L.labels, values: L.LightGBM }, { name: "AutoETS", labels: L.labels, values: L.AutoETS },
+    { name: "AutoARIMA", labels: L.labels, values: L.AutoARIMA }, { name: "Chronos", labels: L.labels, values: L.Chronos },
+    { name: "Seasonal naive", labels: L.labels, values: L.SeasonalNaive },
+  ], { x: 0.6, y: 1.5, w: 7.8, h: 4.6, ...chartText, chartColors: [HEX.lgb, HEX.ets, HEX.arima, HEX.chronos, HEX.naive],
+    lineSize: 2, lineDataSymbolSize: 7, valAxisMinVal: 0.2, valAxisMaxVal: 1.3, valAxisLabelFormatCode: "0.0",
+    showLegend: true, legendPos: "b", legendFontSize: 12, legendColor: HEX.ink, showTitle: true,
+    title: "Error by level: summed over many items (left) to one item in one store (right)", objectName: "level chart" });
+  text(s, "Time to forecast all 5,748 series", { x: 8.8, y: 1.55, w: 3.9, h: 0.4, fontSize: 15, bold: true, color: C.text2 });
+  [["Chronos", "10 s", HEX.chronos], ["LightGBM", "80 s", HEX.lgb], ["AutoETS", "86 s", HEX.ets], ["AutoARIMA", "39 min", HEX.arima]].forEach(([m, t, col], i) => {
+    const y = 2.05 + i * 0.78;
+    card(s, 8.8, y, 3.9, 0.66, "time " + m);
+    text(s, m, { x: 9.05, y, w: 2.0, h: 0.66, fontSize: 16, bold: true, color: col, valign: "middle" });
+    text(s, t, { x: 10.9, y, w: 1.6, h: 0.66, fontSize: 20, bold: true, color: C.text2, align: "right", valign: "middle", fontFace: THEME.headFontFace });
+  });
+  text(s, "Same laptop, one model at a time. Chronos needs no training.", { x: 8.8, y: 5.25, w: 3.9, h: 0.6, fontSize: 12, color: HEX.grey, valign: "top" });
+  text(s, "Item level: the models are close, but close is not a statistical tie. Chronos's strength here is speed, not accuracy.",
+       { x: 0.6, y: 6.25, w: 12.1, h: 0.45, fontSize: 15, bold: true, color: C.text2 });
+  s.addNotes("SPEAKER 2 (1:00)\n\nThe ranking changes with the level. On the left are store and department totals, where LightGBM and AutoETS are far ahead: they capture the shared weekly pattern. AutoARIMA and Chronos forecast each product separately and give nearly flat lines for slow sellers, so their totals miss the weekend peaks.\n\nOn the right, for one item in one store, all models are close. But close is not the same as a statistical tie; we did not formally test those gaps.\n\nOn speed, the differences are huge. Chronos forecasts everything in 10 seconds with no training. LightGBM and AutoETS take under a minute and a half; AutoARIMA takes 39 minutes. So Chronos's advantage in our study is speed, while its overall accuracy is weaker.\n\nTRANSITION: Speaker 3 will cover our experiment with a general-purpose language model.");
+
+  // =============== Speaker 3: general LLM experiment, risks and mitigations
+  pres.addSection({ title: "LLM experiment" });
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "LLM experiment" });
+  s.addText("Claude: a language model that reads sales as text", { placeholder: "title" });
+  hbar(s, DATA.claude_totals.map(([m, v]) => [`${m}  ${v.toFixed(3)}`, v]),
+       r => (r[0].includes("sum of items") ? pale[famColor(r[0])] : famColor(r[0])),
+       { x: 0.6, y: 1.5, w: 6.7, h: 4.75, barGapWidthPct: 40, catAxisLabelFontSize: 11, showValue: false, showTitle: true,
+         title: "12 store × dept totals, WRMSSE (pale = summed item forecasts)", objectName: "Claude totals chart" });
+  text(s, "Chronos vs Claude: both pre-trained, zero-shot", { x: 7.65, y: 1.5, w: 5.1, h: 0.4, fontSize: 15, bold: true, color: C.text2 });
+  const vs = [["", "Chronos", "Claude"], ["Trained on", "Time series", "Text"], ["Reads our data as", "Numbers", "Rows of text"],
+              ["Returns", "Quantiles", "Forecast + explanation"], ["All 5,748 series", "10 s, free", "~3.7 h, ~$347"]];
+  s.addTable(vs.map((r, i) => r.map((c, j) => ({ text: c, options: {
+      bold: i === 0 || j === 0, color: i === 0 ? (j === 1 ? HEX.chronos : j === 2 ? HEX.claude : HEX.ink) : HEX.ink,
+      fill: { color: i === 0 ? "FFFFFF" : HEX.light } } }))),
+    { x: 7.65, y: 2.0, w: 5.05, colW: [1.75, 1.45, 1.85], fontSize: 13, rowH: 0.48, valign: "middle", margin: 0.06,
+      border: { type: "solid", pt: 1, color: "FFFFFF" }, objectName: "Chronos vs Claude table" });
+  card(s, 7.65, 4.65, 5.05, 1.6, "items result");
+  text(s, [{ text: "100 sampled items: ", options: { bold: true } },
+           { text: "AutoETS 0.938 best, AutoARIMA 0.951, Claude 0.958. Same items for every model." }],
+       { x: 7.9, y: 4.65, w: 4.6, h: 1.6, fontSize: 14, color: C.text1, valign: "middle" });
+  text(s, "Claude covered a subset: 100 random items + 12 totals ($13.54), compared on the same series. Totals were also fitted directly for the other models.",
+       { x: 0.6, y: 6.35, w: 12.1, h: 0.5, fontSize: 13, color: HEX.grey });
+  s.addNotes("SPEAKER 3 (1:00)\n\nAs an experiment, we also tried Claude, a general-purpose language model. We paste each product's last year of sales into the prompt as text, one row per day, and it returns a 28-day forecast with a short explanation. Running all 5,748 series would cost hundreds of dollars, so we tested a subset: 100 random items and the 12 store-by-department totals, and compared every model on exactly those series.\n\nOn the totals, Claude scored 0.58, level with the AutoETS-plus-LightGBM average and better than any single model. So it matched the best traditional approach, but did not beat it. Note that we also fitted the other models directly on the totals, which is fairer than summing item forecasts. On the 100 items, Claude came third, behind AutoETS and AutoARIMA.\n\nHow is Claude different from Chronos? Both are pre-trained and need no training on our data. But Chronos was trained on numbers and returns quantiles in seconds for free; Claude was trained on text, reads our data as text, explains itself, and costs about six cents per forecast.\n\nTRANSITION: Using a language model also brings specific risks.");
+
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "LLM experiment" });
+  s.addText("Using an LLM to forecast: risks and safeguards", { placeholder: "title" });
+  const risks = [
+    [I.blind, "Pre-training contamination", "M5 is public and may be in Claude's training data", "Named vs blind test: names, dates and year removed. Accuracy unchanged (0.579 vs 0.583)"],
+    [I.shuffle, "Unstable output", "Answers can vary between runs", "Fixed prompt and model; every response saved and cached"],
+    [I.coins, "Cost and scale", "About $0.06 per series; hours for all 5,748", "Tested a subset (100 items + 12 totals); same subset for every model"],
+    [I.code, "Malformed answers", "Wrong length or format", "Required a fixed JSON format, checked 28 days returned, retried on failure"],
+  ];
+  text(s, "Risk", { x: 1.6, y: 1.45, w: 4.5, h: 0.35, fontSize: 13, bold: true, color: HEX.grey });
+  text(s, "What we did", { x: 6.7, y: 1.45, w: 6.0, h: 0.35, fontSize: 13, bold: true, color: HEX.grey });
+  risks.forEach(([img, h, why, did], i) => {
+    const y = 1.85 + i * 1.0;
+    card(s, 0.6, y, 12.1, 0.88, "risk " + i);
+    badge(s, img, HEX.claude, 0.78, y + 0.12, 0.64, h);
+    text(s, [{ text: h, options: { bold: true, breakLine: true } }, { text: why, options: { color: HEX.grey } }],
+         { x: 1.6, y, w: 4.9, h: 0.88, fontSize: 14, color: C.text2, valign: "middle" });
+    text(s, did, { x: 6.7, y, w: 5.8, h: 0.88, fontSize: 14, color: C.text1, valign: "middle" });
+  });
+  card(s, 0.6, 5.95, 12.1, 0.85, "contamination caveat", HEX.navy);
+  badge(s, I.warn, HEX.amber, 0.78, 6.05, 0.64, "caveat");
+  text(s, "The blind test reduces identity cues, but it cannot guarantee that contamination is excluded: the sales pattern itself could be recognised.",
+       { x: 1.6, y: 5.95, w: 10.9, h: 0.85, fontSize: 15, bold: true, color: "FFFFFF", valign: "middle" });
+  s.addNotes("SPEAKER 3 (1:00)\n\nForecasting with a language model has four risks. First, contamination: the M5 data is public, so Claude may have seen it in training. Our safeguard was the named-versus-blind test: we removed product names, dates and the year. Accuracy didn't change, 0.579 versus 0.583, so real names gave it no advantage.\n\nSecond, outputs can vary between runs; we fixed the prompt and model and saved every response. Third, cost and scale, which is why we used a subset and compared every model on the same subset. Fourth, malformed answers; we required a fixed format and checked every response.\n\nBut be clear about the limit: the blind test reduces identity cues; it cannot guarantee contamination is excluded, because the sales pattern itself could still be recognised.\n\nTRANSITION: Speaker 4 will turn forecasts into business decisions.");
+
+  // =============== Speaker 4: business insight, demo, conclusion
+  pres.addSection({ title: "Business insight and demo" });
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Business insight and demo" });
+  s.addText("The best order is not the forecast", { placeholder: "title" });
+  const nb = DATA.nb;
+  const lab = nb.x.map(String);
+  const sel = k => nb.x.map((x, i) => (k(x) ? nb.pmf[i] : 0));
+  s.addChart(pres.charts.BAR, [
+    { name: "Other demand levels", labels: lab, values: sel(x => x !== nb.p20 && x !== nb.p80) },
+    { name: "Order at 20% margin (P20)", labels: lab, values: sel(x => x === nb.p20) },
+    { name: "Order at 80% margin (P80)", labels: lab, values: sel(x => x === nb.p80) },
+  ], { x: 0.6, y: 1.5, w: 7.0, h: 4.8, ...chartText, barDir: "col", barGrouping: "stacked", barGapWidthPct: 30,
+    chartColors: ["C9CCD3", HEX.chronos, HEX.lgb], valAxisLabelFormatCode: "0%", valAxisMinVal: 0,
+    showLegend: true, legendPos: "b", legendFontSize: 12, legendColor: HEX.ink, showTitle: true,
+    title: `Daily demand for an item that sells ${nb.mean} a day on average`, objectName: "demand distribution chart",
+    showCatAxisTitle: true, catAxisTitle: "Units demanded", catAxisTitleColor: HEX.grey, catAxisTitleFontSize: 12, catAxisTitleFontFace: "+mn-lt" });
+  card(s, 8.0, 1.55, 4.7, 1.45, "formula card");
+  text(s, "Q* = F⁻¹(margin)", { x: 8.25, y: 1.6, w: 4.3, h: 0.75, fontSize: 30, bold: true, color: C.text2, fontFace: THEME.headFontFace });
+  text(s, "Order the demand quantile set by the margin (no salvage value)", { x: 8.25, y: 2.35, w: 4.3, h: 0.6, fontSize: 13, color: C.text1 });
+  text(s, [
+    { text: `20% margin: wasted stock costs more, so order low (P20 = ${nb.p20} units)`, options: { bullet: true, breakLine: true } },
+    { text: `80% margin: a lost sale costs more, so order high (P80 = ${nb.p80} units)`, options: { bullet: true, breakLine: true } },
+    { text: "Needs the full demand distribution, not just the point forecast", options: { bullet: true, breakLine: true } },
+    { text: "Our test: more accurate forecasts earned significantly more only at an 80% margin", options: { bullet: true, bold: true } },
+  ], { x: 8.0, y: 3.2, w: 4.7, h: 3.1, fontSize: 15, color: C.text1, paraSpaceAfter: 8, valign: "top" });
+  s.addNotes(`SPEAKER 4 (1:15)\n\nA forecast only matters through the decision it drives. Here is the key business insight: the best order quantity is not the forecast.\n\nThis is the newsvendor problem. If leftover food has no salvage value, you should order the demand level you will meet with probability equal to your profit margin. Take an item that sells ${nb.mean} units a day on average. With a 20% margin, every wasted unit costs four times a lost sale, so you order low, at the 20th percentile: ${nb.p20} units. With an 80% margin it's the reverse: order high, at the 80th percentile, ${nb.p80} units.\n\nSo a retailer needs the whole demand distribution, not just one number. And when we tested this, more accurate forecasts earned significantly more only at an 80% margin; at typical margins the profit differences were within chance.\n\nTRANSITION: Let me show you this in our dashboard.`);
+
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Business insight and demo" });
+  s.addText("Demo: Shelf Signal v2 dashboard", { placeholder: "title" });
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.6, y: 1.5, w: 7.4, h: 4.75, rectRadius: 0.1, fill: { color: C.background2 },
+    line: { color: HEX.naive, width: 1.25, dashType: "dash" }, objectName: "screenshot placeholder" });
+  text(s, "Live demo or screen recording\n\ndocs/index.html in our repository\n(extends our teammate's Shelf Signal)",
+       { x: 0.6, y: 1.5, w: 7.4, h: 4.75, fontSize: 18, color: HEX.grey, align: "center", valign: "middle" });
+  const demo = [
+    [I.play, "Forecast explorer: pick a series and models", "Replay forecasts against what actually sold"],
+    [I.sliders, "Order planner: change the margin", "Same forecast; the order moves from P20 to P80"],
+    [I.check, "Profit scored with actual sales", "Actuals are used only after the fact"],
+  ];
+  demo.forEach(([img, h, b], i) => {
+    const y = 1.55 + i * 1.45;
+    badge(s, img, HEX.navy, 8.4, y + 0.1, 0.75, h);
+    text(s, String(i + 1) + ". " + h, { x: 9.35, y, w: 3.4, h: 0.55, fontSize: 16, bold: true, color: C.text2, valign: "bottom" });
+    text(s, b, { x: 9.35, y: y + 0.6, w: 3.4, h: 0.7, fontSize: 14, color: C.text1, valign: "top" });
+  });
+  text(s, "Version 2 shows our models: AutoETS, AutoARIMA, LightGBM, Chronos, the ensemble and Claude. Backup: screen recording.",
+       { x: 8.4, y: 5.95, w: 4.3, h: 0.6, fontSize: 12, italic: true, color: HEX.grey, valign: "top" });
+  s.addNotes("SPEAKER 4 (1:15)\n\n[LIVE DEMO. If the connection fails, play the screen recording.]\n\nThis is Shelf Signal version 2, which extends our teammate's original dashboard with all of this project's models. First, in the Forecast explorer, I pick a series, say a store's dairy department, and replay each model's forecast against what actually sold.\n\nSecond, in the Order planner, I keep the forecast fixed and change the profit margin. Watch the recommended order: at a low margin it sits near the 20th percentile of demand, and as the margin rises it moves toward the 80th. The table below scores every model's orders against actual sales. Same forecast, different decision.\n\nThird, note that actual sales are only used to evaluate the forecast afterwards; the forecasts never see the test days.\n\nBEFORE PRESENTING: open docs/index.html from the project folder (it needs internet for the chart library) and have the screen recording ready as a backup.\n\nTRANSITION: To wrap up.");
+
+  s = pres.addSlide({ masterName: "Closing Dark", sectionTitle: "Business insight and demo" });
+  s.addText("Takeaways", { placeholder: "title" });
+  const take = [
+    [I.lgb, HEX.lgb, "Traditional methods lead on accuracy: LightGBM, AutoETS and their average"],
+    [I.chronos, HEX.chronos, "Chronos offers a large speed advantage, with weaker accuracy here"],
+    [I.claude, HEX.claude, "Claude matched the best traditional approach on totals; evidence is limited"],
+    [I.order, HEX.amber, "Good replenishment depends on costs and uncertainty, not accuracy alone"],
+  ];
+  take.forEach(([img, col, h], i) => {
+    const y = 1.55 + i * 1.05;
+    badge(s, img, col, 0.8, y, 0.8, h);
+    text(s, h, { x: 1.85, y, w: 10.8, h: 0.8, fontSize: 22, bold: true, color: C.background1, valign: "middle" });
+  });
+  text(s, "Thank you — questions?", { x: 0.8, y: 6.0, w: 11.0, h: 0.7, fontSize: 30, bold: true, color: HEX.amber, fontFace: THEME.headFontFace });
+  s.addNotes("SPEAKER 4 (0:30)\n\nTo sum up: traditional methods still lead on accuracy. LightGBM is the best single model, AutoETS is close behind, and simply averaging the two is best of all. Chronos offers a huge speed advantage, though its accuracy was weaker here. Claude matched the best traditional approach on the store totals, but on limited evidence. And good replenishment depends on costs and uncertainty, not on accuracy alone.\n\nThank you; we're happy to take questions.");
+
+  await pres.writeFile({ fileName: OUT });
+  await applyTheme(OUT, THEME);
+  console.log("wrote", OUT);
+}
+main().catch(e => { console.error(e); process.exit(1); });

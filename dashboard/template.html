@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shelf Signal</title>
+<style>
+:root{--bg:#f7f7f5;--card:#ffffff;--soft:#f0f0ec;--ink:#1f2328;--muted:#5f5e5a;--faint:#8a8984;--line:#e2e1dc;--accent:#2a78d6;--warn-bg:#fdf3dc;--warn-ink:#6b4a05;--grid:#e8e7e2;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161615;--card:#1f1f1e;--soft:#2a2a28;--ink:#f1f0ea;--muted:#b4b2a9;--faint:#8a8984;--line:#3a3a37;--accent:#5b9cf0;--warn-bg:#3a2f12;--warn-ink:#f4d58a;--grid:#2f2f2c;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:6px}
+h1{font-size:24px;margin:0;font-weight:650}
+h2{font-size:17px;margin:0 0 4px;font-weight:600}
+h3{font-size:14px;margin:0 0 8px;font-weight:600}
+.sub{color:var(--muted);font-size:14px}
+nav{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 18px;border-bottom:1px solid var(--line);padding-bottom:10px}
+nav button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+nav button[aria-selected="true"]{background:var(--card);color:var(--ink);border-color:var(--faint);font-weight:600}
+.tab{display:none}.tab.on{display:block}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.kpi .v{font-size:28px;font-weight:650;line-height:1.2}.kpi .l{font-size:13px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);margin:8px 0 0}
+.warn{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:10px 12px;font-size:13px}
+.controls{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;margin-bottom:12px}
+label.c{display:flex;flex-direction:column;font-size:13px;color:var(--muted);gap:4px}
+select,input[type=range]{font:inherit;font-size:14px}
+select{padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);max-width:340px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip .dot{width:9px;height:9px;border-radius:50%}
+.chip[aria-pressed="true"]{color:var(--ink);border-color:var(--faint);background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{font-size:12px;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.sel td{background:var(--soft);font-weight:600}
+.chart{position:relative;height:300px}.chart.tall{height:360px}.chart.short{height:240px}
+.reason{background:var(--soft);border-radius:8px;padding:10px 12px;font-size:14px;margin:6px 0 10px}
+ul.find{margin:6px 0 0;padding-left:18px}ul.find li{margin:4px 0}
+a{color:var(--accent)}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>Shelf Signal</h1></header>
+<nav role="tablist" id="tabs">
+<button role="tab" data-t="overview" aria-selected="true">Overview</button>
+<button role="tab" data-t="explorer">Forecast explorer</button>
+<button role="tab" data-t="compare">Model comparison</button>
+<button role="tab" data-t="ailab">AI lab</button>
+<button role="tab" data-t="planner">Order planner</button>
+<button role="tab" data-t="ask">Ask the analyst</button>
+<button role="tab" data-t="about">About</button>
+</nav>
+
+<section class="tab on" id="overview">
+<div class="grid g4" id="kpis"></div>
+<div class="grid g2" style="margin-top:14px">
+<div class="card"><h3>Weekly food units sold, 4 California stores</h3><div class="chart short"><canvas id="cWeekly"></canvas></div></div>
+<div class="card"><h3>Average sales by weekday (average day = 100)</h3><div class="chart short"><canvas id="cWeekday"></canvas></div></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>What we found</h3><ul class="find" id="findings"></ul></div>
+</section>
+
+<section class="tab" id="explorer">
+<div class="card">
+<div class="controls">
+<label class="c">Level<select id="exLevel"></select></label>
+<label class="c">Series<select id="exSeries"></select></label>
+</div>
+<div class="chips" id="exChips"></div>
+<div class="chart tall" style="margin-top:10px"><canvas id="cEx"></canvas></div>
+<p class="note" id="exNote"></p>
+</div>
+<div class="card" style="margin-top:14px"><h3>Accuracy on this series (28 test days)</h3><table id="exTable"></table>
+<p class="note">RMSSE: root mean squared error scaled by the series' naive one-day error in training; below 1 beats a naive forecast.</p></div>
+</section>
+
+<section class="tab" id="compare">
+<div class="grid g2">
+<div class="card"><h3>Accuracy on all 5,748 series (WRMSSE, lower is better)</h3><div class="chart"><canvas id="cAcc"></canvas></div></div>
+<div class="card"><h3>Error by aggregation level</h3><div class="chart"><canvas id="cLevel"></canvas></div><p class="note">Left: summed over many items. Right: one item in one store.</p></div>
+<div class="card"><h3>Time to fit and forecast all 5,748 series (log scale)</h3><div class="chart"><canvas id="cTime"></canvas></div><p class="note">Same laptop, one model at a time. Claude is estimated from its 224-call run.</p></div>
+<div class="card"><h3>Share of items where each single model is most accurate</h3><div class="chart"><canvas id="cShare"></canvas></div><p class="note">At item level the models are close; close is not a statistical tie.</p></div>
+</div>
+</section>
+
+<section class="tab" id="ailab">
+<div class="grid g2">
+<div class="card"><h3>Chronos vs Claude: both pre-trained, zero-shot</h3><table>
+<tr><th></th><th>Chronos</th><th>Claude</th></tr>
+<tr><td>Trained on</td><td>Time series (~100B observations, no retail)</td><td>Text and code</td></tr>
+<tr><td>Reads our data as</td><td>Numbers</td><td>Text, one row per day</td></tr>
+<tr><td>Inputs used</td><td>Sales history</td><td>Sales history, calendar, price</td></tr>
+<tr><td>Returns</td><td>Quantiles</td><td>Forecast, percentiles and an explanation</td></tr>
+<tr><td>All 5,748 series</td><td>10 s, free</td><td>~3.7 h, ~$347 (est.)</td></tr>
+<tr><td>Same output on rerun</td><td>Yes</td><td>Not exactly</td></tr></table></div>
+<div class="card"><h3>Named vs blind: does Claude recall the data?</h3><div class="chart"><canvas id="cNB"></canvas></div><p class="note">Each point is one series' MAE with real names and dates (vertical) against names and dates hidden (horizontal). Points on the diagonal: no advantage from names.</p></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Claude's accuracy on its subset (same series for every model)</h3><div class="grid g2" id="claudeTables"></div></div>
+<div class="card" style="margin-top:14px">
+<h3>Read Claude's reasoning</h3>
+<div class="controls"><label class="c">Series<select id="rsSeries"></select></label></div>
+<div class="grid g2"><div><div class="badge">Blind prompt</div><div class="reason" id="rsBlind"></div><div class="badge">Named prompt</div><div class="reason" id="rsNamed"></div></div>
+<div class="chart"><canvas id="cRs"></canvas></div></div>
+<p class="warn" style="margin-top:10px">The blind test reduces identity cues, but it cannot guarantee that contamination is excluded: the sales pattern itself could be recognised.</p>
+</div>
+</section>
+
+<section class="tab" id="planner">
+<div class="card">
+<h2>The best order is not the forecast</h2>
+<p class="note" style="margin-top:0">With no salvage value, the profit-maximising order is the demand quantile equal to the gross margin: Q* = F<sup>−1</sup>(margin). Move the margin and watch the order move.</p>
+<div class="controls" style="margin-top:12px">
+<label class="c">Item<select id="plItem"></select></label>
+<label class="c">Model<select id="plModel"></select></label>
+<label class="c">Gross margin <b id="plMOut" style="color:var(--ink)">50%</b><input type="range" id="plMargin" min="20" max="80" step="5" value="50" style="width:200px"></label>
+<label class="c">Test day <b id="plDOut" style="color:var(--ink)">1</b><input type="range" id="plDay" min="1" max="28" step="1" value="1" style="width:200px"></label>
+</div>
+<div class="grid g4" id="plKpis"></div>
+<div class="grid g2" style="margin-top:14px">
+<div><h3>Forecast demand distribution for the selected day</h3><div class="chart"><canvas id="cDist"></canvas></div></div>
+<div><h3>Orders vs actual sales over the 28 days</h3><div class="chart"><canvas id="cOrders"></canvas></div></div>
+</div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Profit on this item over the 28 test days at this margin</h3><table id="plTable"></table>
+<p class="note">Demand distribution: negative binomial around each model's forecast, with spread from the item's recent sales (the same method as the report). Actual sales are used only to score the orders afterwards.</p></div>
+</section>
+
+<section class="tab" id="ask">
+<div class="card">
+<h2>Ask the analyst</h2>
+<p class="note" style="margin-top:0">Pick a question. Answers are written from this project's results; numbers come from the same data as the other tabs.</p>
+<div class="chips" id="askChips" style="margin:12px 0"></div>
+<div class="reason" id="askAnswer" style="font-size:15px;line-height:1.6"></div>
+<p class="note">For your own questions, the original <a href="https://jing0712.github.io/shelf-signal/">Shelf Signal</a> has a live Claude analyst (store CA_1, 15 items).</p>
+</div>
+</section>
+
+<section class="tab" id="about">
+<div class="grid g2">
+<div class="card"><h3>Method</h3><ul class="find">
+<li>Data: Walmart M5, food category, stores CA_1–CA_4: 5,748 item × store series. Trained to 2016-05-22, tested on the next 28 days, which no model saw.</li>
+<li>Models: AutoETS, AutoARIMA (statsforecast), LightGBM (one global model), Chronos-Bolt small (zero-shot), seasonal naive, and the unweighted average of AutoETS and LightGBM.</li>
+<li>Claude Opus 5.5 forecast 112 series (100 random items + 12 store × dept totals) as an experiment, each run with and without names and dates.</li>
+<li>Accuracy: WRMSSE, the official M5 metric, plus MAE and RMSSE per series.</li>
+<li>Item and store × dept totals here are sums of item forecasts unless marked "direct".</li></ul></div>
+<div class="card"><h3>Limitations</h3><ul class="find">
+<li>One 28-day test window; close rankings can change in another window.</li>
+<li>Claude was tested on 112 series; the blind test cannot rule out that it saw the data.</li>
+<li>Sales are not demand: a stocked-out shelf records zero sales.</li>
+<li>The order planner assumes perishable stock with no salvage value.</li></ul>
+<h3 style="margin-top:14px">Credits</h3>
+<p class="note" style="margin-top:0">Version 2 of <a href="https://jing0712.github.io/shelf-signal/">Shelf Signal</a> by our teammate (store CA_1, 15 items, its own models and rolling validation), extended with this project's models and results. The 15 Shelf Signal items appear in the item lists. Group 3, Time Series Analysis and Forecasting, UCLA Anderson.</p></div>
+</div>
+</section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const D = /*__DATA__*/null;
+const COL = {SeasonalNaive:"#9A9993",AutoARIMA:"#1BAF7A",AutoETS:"#D55181",LightGBM:"#2A78D6",Ensemble:"#0F5C73",Chronos:"#EB6834",Claude:"#4A3AA7"};
+const NAME = m => m.replace("SeasonalNaive","Seasonal naive");
+const fam = m => m.split(" (")[0];
+const colOf = m => COL[fam(m)] || "#888";
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (x,d=2) => x==null ? "–" : Number(x).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+const charts = {};
+function chart(id, cfg){ if(charts[id]) charts[id].destroy(); charts[id] = new Chart(document.getElementById(id), cfg); return charts[id]; }
+function baseOpts(extra={}){ const g=css("--grid"), t=css("--muted");
+  return Object.assign({responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{legend:{labels:{color:t,boxWidth:12,font:{size:12}}},tooltip:{mode:"index",intersect:false}},
+    scales:{x:{ticks:{color:t,font:{size:11}},grid:{color:g}},y:{ticks:{color:t,font:{size:11}},grid:{color:g}}}}, extra); }
+const byId = Object.fromEntries(D.series.map(s=>[s.id,s]));
+
+// ---------- dates
+const testDates = D.test_dates;
+const histDates = (()=>{ const d0=new Date(testDates[0]+"T00:00:00Z"); return Array.from({length:D.hist_days},(_,i)=>{const d=new Date(d0); d.setUTCDate(d.getUTCDate()-D.hist_days+i); return d.toISOString().slice(0,10);}); })();
+const short = s => new Date(s+"T00:00:00Z").toLocaleDateString(undefined,{month:"short",day:"numeric",timeZone:"UTC"});
+
+// ---------- tabs
+const drawn = {};
+document.getElementById("tabs").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected", x===b));
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on", x.id===b.dataset.t));
+  if(!drawn[b.dataset.t]){ drawn[b.dataset.t]=true; ({explorer:drawExplorer,compare:drawCompare,ailab:drawAILab,planner:drawPlanner,ask:drawAsk})[b.dataset.t]?.(); }
+});
+
+// ---------- overview
+(function(){
+  const acc = Object.fromEntries(D.accuracy.map(a=>[a.model,a]));
+  const ct = D.claude_accuracy.filter(r=>r.level==="store x dept");
+  const cl = ct.find(r=>r.model==="Claude (blind)"), en = ct.find(r=>r.model==="Ensemble (sum of items)");
+  const k = [["Best overall: AutoETS + LightGBM average", fmt(acc.Ensemble.WRMSSE,3), "WRMSSE, all 5,748 series"],
+             ["Best single model: LightGBM", fmt(acc.LightGBM.WRMSSE,3), "AutoETS close behind at "+fmt(acc.AutoETS.WRMSSE,3)],
+             ["Fastest: Chronos", "10 s", "All series, no training (AutoARIMA: 39 min)"],
+             ["Claude on 12 store × dept totals", fmt(cl.WRMSSE,3), "Level with the ensemble ("+fmt(en.WRMSSE,3)+")"]];
+  document.getElementById("kpis").innerHTML = k.map(([l,v,s])=>`<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="l">${s}</div></div>`).join("");
+  document.getElementById("findings").innerHTML = [
+    "Traditional methods still lead on accuracy: LightGBM is the best single model, AutoETS is close, and their simple average is best overall.",
+    "Rankings change with the level: models differ most for store and department totals and are close for single items.",
+    "Chronos needs no training and forecasts every series in seconds, but its overall accuracy is weaker here.",
+    "Claude matched the best traditional approach on store × department totals, on a small subset and with residual contamination risk.",
+    "The best order depends on the margin, not just the forecast: see the Order planner."].map(x=>`<li>${x}</li>`).join("");
+  chart("cWeekly",{type:"line",data:{labels:D.weekly.week.map(w=>w.slice(0,7)),datasets:[{data:D.weekly.units,borderColor:css("--ink"),borderWidth:1.2,pointRadius:0}]},
+    options:baseOpts({plugins:{legend:{display:false}},scales:{x:{ticks:{color:css("--muted"),maxTicksLimit:7,font:{size:11}},grid:{display:false}},y:{ticks:{color:css("--muted"),font:{size:11}},grid:{color:css("--grid")},beginAtZero:true}}})});
+  chart("cWeekday",{type:"bar",data:{labels:D.weekday.map(d=>d.weekday.slice(0,3)),datasets:[{data:D.weekday.map(d=>d.index),backgroundColor:D.weekday.map(d=>/Sat|Sun/.test(d.weekday)?"#2A78D6":"#c9c8c3"),borderRadius:4}]},
+    options:baseOpts({plugins:{legend:{display:false}}})});
+})();
+
+// ---------- explorer
+const LEVELS = ["Total","Store","Department","Store x dept","Item"];
+let exOn = new Set(["Ensemble","LightGBM","Chronos"]);
+function drawExplorer(){
+  const lv=document.getElementById("exLevel");
+  lv.innerHTML = LEVELS.map(l=>`<option>${l}</option>`).join("");
+  lv.value="Store x dept";
+  lv.onchange = fillSeries; document.getElementById("exSeries").onchange = renderEx;
+  fillSeries();
+}
+function fillSeries(){
+  const lv=document.getElementById("exLevel").value, sel=document.getElementById("exSeries");
+  const list=D.series.filter(s=>s.level===lv);
+  if(lv==="Item"){ const groups=[...new Set(list.map(s=>s.group))];
+    sel.innerHTML=groups.map(g=>`<optgroup label="${g}">`+list.filter(s=>s.group===g).map(s=>`<option value="${s.id}">${s.label}</option>`).join("")+"</optgroup>").join("");
+  } else sel.innerHTML=list.map(s=>`<option value="${s.id}">${s.label}</option>`).join("");
+  renderEx();
+}
+function renderEx(){
+  const s=byId[document.getElementById("exSeries").value];
+  const models=Object.keys(s.fc);
+  if(![...exOn].some(m=>models.includes(m))) exOn=new Set(models.slice(0,3));
+  document.getElementById("exChips").innerHTML=models.map(m=>`<button class="chip" data-m="${m}" aria-pressed="${exOn.has(m)}"><span class="dot" style="background:${colOf(m)}"></span>${NAME(m)}</button>`).join("");
+  document.querySelectorAll("#exChips .chip").forEach(b=>b.onclick=()=>{const m=b.dataset.m; exOn.has(m)?exOn.delete(m):exOn.add(m); renderEx();});
+  const labels=[...histDates,...testDates].map(short), nh=s.hist.length;
+  const ds=[{label:"Actual",data:[...s.hist,...s.actual],borderColor:css("--ink"),borderWidth:1.6,pointRadius:0,tension:0}];
+  models.filter(m=>exOn.has(m)).forEach(m=>ds.push({label:NAME(m),data:[...Array(nh).fill(null),...s.fc[m]],borderColor:colOf(m),borderWidth:2,pointRadius:0,
+    borderDash:/direct|named/.test(m)?[5,4]:[]}));
+  chart("cEx",{type:"line",data:{labels,datasets:ds},options:baseOpts({scales:{x:{ticks:{color:css("--muted"),maxTicksLimit:10,font:{size:11}},grid:{display:false}},y:{beginAtZero:true,ticks:{color:css("--muted"),font:{size:11}},grid:{color:css("--grid")}}}})});
+  const note=[]; if(s.level!=="Item") note.push("Forecasts are sums of item forecasts unless marked “direct” (fitted on this total).");
+  if(s.level==="Store x dept") note.push("Claude forecast this total directly.");
+  if(s.level==="Item" && !s.in_claude) note.push("Claude did not forecast this item (not in its 100-item sample).");
+  note.push("Grey area left of the forecast start: last 56 training days.");
+  document.getElementById("exNote").textContent=note.join(" ");
+  const rows=models.map(m=>({m,...s.metrics[m]})).sort((a,b)=>(a.rmsse??9)-(b.rmsse??9));
+  document.getElementById("exTable").innerHTML="<tr><th>Model</th><th class='n'>MAE (units)</th><th class='n'>RMSSE</th></tr>"+rows.map(r=>`<tr><td><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${colOf(r.m)};margin-right:6px"></span>${NAME(r.m)}</td><td class="n">${fmt(r.mae,2)}</td><td class="n">${fmt(r.rmsse,3)}</td></tr>`).join("");
+}
+
+// ---------- comparison
+function drawCompare(){
+  const a=D.accuracy;
+  chart("cAcc",{type:"bar",data:{labels:a.map(x=>NAME(x.model)),datasets:[{data:a.map(x=>x.WRMSSE),backgroundColor:a.map(x=>colOf(x.model)),borderRadius:4}]},
+    options:baseOpts({indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{min:0,max:1,ticks:{color:css("--muted")},grid:{color:css("--grid")}},y:{ticks:{color:css("--ink")},grid:{display:false}}}})});
+  const L=D.by_level, lab=["Total","Store","Dept","Store × dept","Item","Item × store"];
+  chart("cLevel",{type:"line",data:{labels:lab,datasets:["Ensemble","LightGBM","AutoETS","AutoARIMA","Chronos","SeasonalNaive"].map(m=>({label:NAME(m),data:L[m],borderColor:colOf(m),backgroundColor:colOf(m),borderWidth:2,pointRadius:3,borderDash:m==="SeasonalNaive"?[5,4]:[]}))},options:baseOpts()});
+  const t=D.timing.map(x=>({m:x.model,s:x.wall_seconds/x.series*5748})).sort((p,q)=>p.s-q.s);
+  chart("cTime",{type:"bar",data:{labels:t.map(x=>x.m),datasets:[{data:t.map(x=>x.s),backgroundColor:t.map(x=>colOf(x.m)),borderRadius:4}]},
+    options:baseOpts({indexAxis:"y",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const s=c.raw;return s<120?Math.round(s)+" s":s<7200?Math.round(s/60)+" min":(s/3600).toFixed(1)+" h"}}}},
+      scales:{x:{type:"logarithmic",min:1,ticks:{color:css("--muted"),callback:v=>({1:"1 s",10:"10 s",100:"100 s",1000:"1,000 s",10000:"10,000 s"})[v]||""},grid:{color:css("--grid")}},y:{ticks:{color:css("--ink")},grid:{display:false}}}})});
+  chart("cShare",{type:"bar",data:{labels:D.best_share.map(x=>x.model),datasets:[{data:D.best_share.map(x=>x.share*100),backgroundColor:D.best_share.map(x=>colOf(x.model)),borderRadius:4}]},
+    options:baseOpts({plugins:{legend:{display:false}},scales:{y:{min:0,ticks:{color:css("--muted"),callback:v=>v+"%"},grid:{color:css("--grid")}},x:{ticks:{color:css("--ink")},grid:{display:false}}}})});
+}
+
+// ---------- AI lab
+function drawAILab(){
+  const tbl=lvl=>{const rows=D.claude_accuracy.filter(r=>r.level===lvl&&r.model!=="SeasonalNaive (sum of items)").sort((a,b)=>a.WRMSSE-b.WRMSSE);
+    return `<div><h3 style="font-weight:500">${lvl==="store x dept"?"12 store × dept totals":"100 sampled items"}</h3><table><tr><th>Model</th><th class="n">WRMSSE</th></tr>`+rows.map(r=>`<tr${/Claude/.test(r.model)?' class="sel"':''}><td>${NAME(r.model)}</td><td class="n">${fmt(r.WRMSSE,3)}</td></tr>`).join("")+"</table></div>";};
+  document.getElementById("claudeTables").innerHTML=tbl("store x dept")+tbl("item x store");
+  const pts=D.series.filter(s=>s.metrics["Claude (blind)"]&&s.metrics["Claude (named)"]).map(s=>({x:s.metrics["Claude (blind)"].mae,y:s.metrics["Claude (named)"].mae,id:s.label,lvl:s.level}));
+  const mx=Math.max(...pts.map(p=>Math.max(p.x,p.y)))*1.05;
+  chart("cNB",{type:"scatter",data:{datasets:[{label:"Items",data:pts.filter(p=>p.lvl==="Item"),backgroundColor:"#4A3AA7"},{label:"Store × dept totals",data:pts.filter(p=>p.lvl!=="Item"),backgroundColor:"#EB6834"},
+    {label:"Equal accuracy",type:"line",data:[{x:0.05,y:0.05},{x:mx,y:mx}],borderColor:css("--faint"),borderDash:[4,4],pointRadius:0,borderWidth:1}]},
+    options:baseOpts({plugins:{tooltip:{callbacks:{label:c=>c.raw.id?`${c.raw.id}: blind ${fmt(c.raw.x)}, named ${fmt(c.raw.y)}`:""}},legend:{labels:{color:css("--muted")}}},
+      scales:{x:{type:"logarithmic",title:{display:true,text:"MAE, blind",color:css("--muted")},ticks:{color:css("--muted")},grid:{color:css("--grid")}},y:{type:"logarithmic",title:{display:true,text:"MAE, named",color:css("--muted")},ticks:{color:css("--muted")},grid:{color:css("--grid")}}}})});
+  const sel=document.getElementById("rsSeries"), have=D.series.filter(s=>D.reasoning[s.id]);
+  sel.innerHTML=`<optgroup label="Store × dept totals">`+have.filter(s=>s.level!=="Item").map(s=>`<option value="${s.id}">${s.label}</option>`).join("")+`</optgroup><optgroup label="Items">`+have.filter(s=>s.level==="Item").map(s=>`<option value="${s.id}">${s.label}</option>`).join("")+"</optgroup>";
+  sel.onchange=renderReason; renderReason();
+}
+function renderReason(){
+  const s=byId[document.getElementById("rsSeries").value], r=D.reasoning[s.id]||{};
+  document.getElementById("rsBlind").textContent=r.blind||"–"; document.getElementById("rsNamed").textContent=r.named||"–";
+  const ds=[{label:"Actual",data:s.actual,borderColor:css("--ink"),borderWidth:1.6,pointRadius:0}];
+  ["Claude (blind)","Claude (named)","Ensemble"].forEach(m=>{ if(s.fc[m]) ds.push({label:NAME(m),data:s.fc[m],borderColor:colOf(m),borderWidth:2,pointRadius:0,borderDash:m.includes("named")?[5,4]:[]}); });
+  chart("cRs",{type:"line",data:{labels:testDates.map(short),datasets:ds},options:baseOpts({scales:{x:{ticks:{color:css("--muted"),maxTicksLimit:7},grid:{display:false}},y:{beginAtZero:true,ticks:{color:css("--muted")},grid:{color:css("--grid")}}}})});
+}
+
+// ---------- order planner (negative binomial, mean = forecast, variance = phi * mean)
+function lgamma(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.001208650973866179,-0.000005395239384953];let y=x,t=x+5.5;t-=(x+0.5)*Math.log(t);let s=1.000000000190015;for(const v of c)s+=v/++y;return -t+Math.log(2.5066282746310005*s/x);}
+function nbPmf(mu,phi,kmax){ if(mu<=1e-6) return [1]; phi=Math.max(phi,1.01); const r=mu/(phi-1), p=1/phi, out=[];
+  for(let k=0;k<=kmax;k++) out.push(Math.exp(lgamma(k+r)-lgamma(r)-lgamma(k+1)+r*Math.log(p)+k*Math.log(1-p))); return out; }
+function nbQuant(mu,phi,q){ if(mu<=1e-6) return 0; const kmax=Math.ceil(mu+12*Math.sqrt(mu*Math.max(phi,1.01))+10); const pm=nbPmf(mu,phi,kmax); let c=0;
+  for(let k=0;k<pm.length;k++){ c+=pm[k]; if(c>=q) return k; } return kmax; }
+function drawPlanner(){
+  const items=D.series.filter(s=>s.level==="Item"), sel=document.getElementById("plItem");
+  const groups=[...new Set(items.map(s=>s.group))];
+  sel.innerHTML=groups.map(g=>`<optgroup label="${g}">`+items.filter(s=>s.group===g).map(s=>`<option value="${s.id}">${s.label}</option>`).join("")+"</optgroup>").join("");
+  sel.onchange=()=>{fillPlModels(); renderPlanner();};
+  ["plModel","plMargin","plDay"].forEach(id=>document.getElementById(id).oninput=renderPlanner);
+  fillPlModels(); renderPlanner();
+}
+function fillPlModels(){ const s=byId[document.getElementById("plItem").value], m=document.getElementById("plModel"), prev=m.value;
+  const models=Object.keys(s.fc).filter(x=>x!=="Claude (named)"); m.innerHTML=models.map(x=>`<option value="${x}">${NAME(x)}</option>`).join(""); m.value=models.includes(prev)?prev:"Ensemble"; }
+function renderPlanner(){
+  const s=byId[document.getElementById("plItem").value], model=document.getElementById("plModel").value;
+  const mg=+document.getElementById("plMargin").value/100, day=+document.getElementById("plDay").value-1;
+  document.getElementById("plMOut").textContent=Math.round(mg*100)+"%"; document.getElementById("plDOut").textContent=day+1+" ("+short(testDates[day])+")";
+  const phi=s.phi||1.5, orders=m=>s.fc[m].map(mu=>nbQuant(Math.max(mu,0),phi,mg));
+  const profit=(Q)=>{let pr=0,sold=0,waste=0,dem=0; Q.forEach((q,i)=>{const p=s.price[i]||0,d=s.actual[i]; pr+=p*Math.min(q,d)-p*(1-mg)*q; sold+=Math.min(q,d); waste+=Math.max(q-d,0); dem+=d;}); return {pr,fill:dem?sold/dem:1,waste};};
+  const Q=orders(model), mu=s.fc[model][day];
+  const kp=[["Forecast (mean), day "+(day+1),fmt(mu,1)],["Order Q* (P"+Math.round(mg*100)+")",Q[day]],["Actual sales that day",fmt(s.actual[day],0)],["Price",s.price[day]==null?"–":"$"+fmt(s.price[day],2)]];
+  document.getElementById("plKpis").innerHTML=kp.map(([l,v],i)=>`<div class="card kpi" style="padding:12px 14px"><div class="l">${l}</div><div class="v" style="font-size:24px;${i===1?'color:var(--accent)':''}">${v}</div></div>`).join("");
+  const kmax=Math.max(Q[day],s.actual[day],Math.ceil(mu+4*Math.sqrt(mu*Math.max(phi,1.01))+3),6), pm=nbPmf(Math.max(mu,0),phi,kmax);
+  chart("cDist",{type:"bar",data:{labels:pm.map((_,k)=>k),datasets:[{data:pm.map(v=>v*100),backgroundColor:pm.map((_,k)=>k===Q[day]?"#2A78D6":k===Math.round(s.actual[day])?"#F2B33D":"#c9c8c3"),borderRadius:3}]},
+    options:baseOpts({plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw,1)+"% chance of "+c.label+" units"}}},scales:{y:{ticks:{color:css("--muted"),callback:v=>v+"%"},grid:{color:css("--grid")}},x:{title:{display:true,text:"Units demanded (blue = order, amber = actual)",color:css("--muted")},ticks:{color:css("--muted")},grid:{display:false}}}})});
+  chart("cOrders",{type:"line",data:{labels:testDates.map(short),datasets:[{label:"Actual sales",data:s.actual,borderColor:css("--ink"),borderWidth:1.6,pointRadius:0},{label:"Order ("+NAME(model)+")",data:Q,borderColor:"#2A78D6",borderWidth:2,pointRadius:0,stepped:true},{label:"Forecast mean",data:s.fc[model],borderColor:colOf(model),borderDash:[4,4],borderWidth:1.5,pointRadius:0}]},
+    options:baseOpts({scales:{x:{ticks:{color:css("--muted"),maxTicksLimit:7},grid:{display:false}},y:{beginAtZero:true,ticks:{color:css("--muted")},grid:{color:css("--grid")}}}})});
+  const ms=Object.keys(s.fc).filter(x=>x!=="Claude (named)"), rows=ms.map(m=>({m,...profit(orders(m))}));
+  const perfect=profit(s.actual.slice()); rows.sort((a,b)=>b.pr-a.pr);
+  document.getElementById("plTable").innerHTML="<tr><th>Model</th><th class='n'>Profit ($)</th><th class='n'>Fill rate</th><th class='n'>Wasted units</th></tr>"+rows.map(r=>`<tr${r.m===model?' class="sel"':''}><td>${NAME(r.m)}</td><td class="n">${fmt(r.pr,0)}</td><td class="n">${fmt(r.fill*100,0)}%</td><td class="n">${fmt(r.waste,0)}</td></tr>`).join("")+`<tr><td><i>Perfect foresight</i></td><td class="n"><i>${fmt(perfect.pr,0)}</i></td><td class="n"><i>100%</i></td><td class="n"><i>0</i></td></tr>`;
+}
+
+// ---------- ask the analyst (pre-written answers, numbers from the data)
+function drawAsk(){
+  const a=Object.fromEntries(D.accuracy.map(x=>[x.model,x])), w=m=>fmt(a[m].WRMSSE,3);
+  const ct=Object.fromEntries(D.claude_accuracy.filter(r=>r.level==="store x dept").map(r=>[r.model,r.WRMSSE]));
+  const ci=D.claude_accuracy.filter(r=>r.level==="item x store").sort((p,q)=>p.WRMSSE-q.WRMSSE);
+  const t=Object.fromEntries(D.timing.map(x=>[x.model,x.wall_seconds/x.series*5748]));
+  const L=D.by_level, b80=D.bootstrap.find(r=>r.margin===0.8&&/AutoARIMA/.test(r.comparison));
+  const QA=[
+   ["Which model is most accurate?",`Across all 5,748 series, the unweighted average of AutoETS and LightGBM is best (WRMSSE ${w("Ensemble")}). LightGBM is the best single model (${w("LightGBM")}), with AutoETS close behind (${w("AutoETS")}). AutoARIMA (${w("AutoARIMA")}) and Chronos (${w("Chronos")}) trail the seasonal-naive benchmark (${w("SeasonalNaive")}).`],
+   ["Why does averaging AutoETS and LightGBM win?","The two models make different kinds of errors: AutoETS follows each item's own level and weekly cycle, while LightGBM learns patterns shared across all items, prices and the calendar. Averaging cancels part of each one's errors. It is a classic forecasting result, and our teammate's Shelf Signal found the same with ETS and gradient-boosted trees."],
+   ["Can AI foundation models beat traditional models?",`Not on accuracy in this study. Chronos is weaker overall (${w("Chronos")}), and Claude matched the best traditional approach on the 12 store × department totals (${fmt(ct["Claude (blind)"],3)} blind vs ${fmt(ct["Ensemble (sum of items)"],3)} for the ensemble) without beating it. On efficiency, Chronos wins clearly: no training and about ${Math.round(t.Chronos)} seconds for every series.`],
+   ["How is Claude different from Chronos?","Both are pre-trained transformers used with no training on our data. Chronos was trained on about 100 billion time-series observations, reads our data as numbers and returns quantiles in seconds for free. Claude was trained on text, reads each day's sales as a row of text, explains its reasoning, and costs about $0.06 per series. Chronos gives the same answer on a rerun; Claude may not."],
+   ["Did Claude memorise the M5 data?",`We can't be sure. With names, dates and the year removed, Claude was just as accurate as with them (${fmt(ct["Claude (named)"],3)} named vs ${fmt(ct["Claude (blind)"],3)} blind on totals), so the labels gave it no advantage. But the blind test cannot guarantee contamination is excluded: the sales pattern itself could still be recognised.`],
+   ["Why do AutoARIMA and Chronos look bad on store totals?",`They forecast each item separately, and for items selling 0–2 units a day the best forecast is nearly flat. Summed over thousands of items, those flat lines miss the weekend peaks. Fitted directly on the 12 store × department totals, AutoARIMA improves to ${fmt(ct["AutoARIMA (direct)"],3)} and Chronos to ${fmt(ct["Chronos (direct)"],3)}, level with LightGBM.`],
+   ["Are the models different for a single item?",`Much less. For one item in one store, each single model is most accurate on part of the items (LightGBM ${Math.round(D.best_share.find(x=>x.model==="LightGBM").share*100)}%, AutoARIMA ${Math.round(D.best_share.find(x=>x.model==="AutoARIMA").share*100)}%), and on Claude's 100-item sample ${NAME(ci[0].model)} was best (${fmt(ci[0].WRMSSE,3)}). Daily sales of one item are mostly noise. Close is not the same as a statistical tie; we did not test those gaps formally.`],
+   ["Which model is fastest, and does it matter?",`Chronos: about ${Math.round(t.Chronos)} s for all 5,748 series, against ${Math.round(t.LightGBM)} s for LightGBM, ${Math.round(t.AutoETS)} s for AutoETS and ${Math.round(t.AutoARIMA/60)} min for AutoARIMA. Claude would take about ${(t.Claude/3600).toFixed(1)} hours and cost about $347. For a retailer re-forecasting thousands of products daily, that gap decides what is practical.`],
+   ["Why isn't the best order just the forecast?","A missed sale loses the margin; an unsold unit wastes its cost. With no salvage value, profit is maximised by ordering the demand quantile equal to the gross margin: the 20th percentile for a 20% margin, the 80th for an 80% margin. So a retailer needs the whole demand distribution, not one number. Try it in the Order planner."],
+   ["Does a more accurate forecast earn more profit?",`Only sometimes. At typical margins (35–65%), profit differences between models were within chance. At an 80% margin, where stock-outs are costly, the more accurate LightGBM earned significantly more (about $${Math.abs(b80.diff/1000).toFixed(1)}k more than AutoARIMA over 28 days). Accuracy is measured largely at aggregate levels, but orders are placed item by item, where models are close.`],
+   ["How reliable are these results?","They come from one 28-day test window, and close rankings can flip between windows (our teammate's Shelf Signal saw this between its validation and test windows). Claude was tested on 112 series only. Sales also understate demand when shelves run empty. A rolling backtest over several windows is the main next step."],
+  ];
+  const chips=document.getElementById("askChips");
+  chips.innerHTML=QA.map(([q],i)=>`<button class="chip" data-i="${i}" aria-pressed="${i===0}">${q}</button>`).join("");
+  const show=i=>{document.getElementById("askAnswer").textContent=QA[i][1]; chips.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",+c.dataset.i===i));};
+  chips.onclick=e=>{const c=e.target.closest(".chip"); if(c) show(+c.dataset.i);};
+  show(0);
+}
+</script>
+</body>
+</html>

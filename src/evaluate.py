@@ -37,7 +37,7 @@ LEVELS = {
 
 def load_forecasts():
     fc = pd.read_parquet(FORECASTS / "stat.parquet")
-    for name in ["lgb", "chronos"]:
+    for name in ["lgb", "chronos", "ensemble"]:
         path = FORECASTS / f"{name}.parquet"
         if path.exists():
             fc = fc.merge(pd.read_parquet(path), on=["unique_id", "ds"], how="left")

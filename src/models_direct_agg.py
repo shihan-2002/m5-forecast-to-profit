@@ -1,7 +1,7 @@
 """Fit models directly on the 12 store x department totals.
 
 Claude forecasts each total directly, while the item-level models' totals are sums of
-1,437 item forecasts (bottom-up). This script gives AutoARIMA, Chronos and seasonal naive
+1,437 item forecasts (bottom-up). This script gives AutoARIMA, AutoETS, Chronos and seasonal naive
 the same direct view of each total, so the comparison with Claude is like for like.
 (LightGBM is a global model; 12 series are too few to train it, so it stays bottom-up.)
 
@@ -12,7 +12,7 @@ import pandas as pd
 import torch
 from chronos import BaseChronosPipeline
 from statsforecast import StatsForecast
-from statsforecast.models import AutoARIMA, SeasonalNaive
+from statsforecast.models import AutoARIMA, AutoETS, SeasonalNaive
 
 from config import PROCESSED, FORECASTS, HORIZON, SEASON, STAT_HISTORY_DAYS, LAST_TRAIN_D
 from models_chronos import MODEL, CONTEXT, QUANTILES
@@ -25,7 +25,7 @@ def main():
     agg = df.groupby(["unique_id", "d_num", "ds"], observed=True).y.sum().reset_index()
 
     hist = agg[agg.d_num > LAST_TRAIN_D - STAT_HISTORY_DAYS]
-    sf = StatsForecast(models=[SeasonalNaive(season_length=SEASON), AutoARIMA(season_length=SEASON)],
+    sf = StatsForecast(models=[SeasonalNaive(season_length=SEASON), AutoARIMA(season_length=SEASON), AutoETS(season_length=SEASON)],
                        freq="D", n_jobs=-1)
     fc = sf.forecast(df=hist[["unique_id", "ds", "y"]], h=HORIZON)
     fc = fc.reset_index() if "unique_id" not in fc.columns else fc
@@ -41,7 +41,7 @@ def main():
                        "Chronos": mean.reshape(-1)})
 
     out = fc.merge(ch, on=["unique_id", "ds"])
-    cols = ["SeasonalNaive", "AutoARIMA", "Chronos"]
+    cols = ["SeasonalNaive", "AutoARIMA", "AutoETS", "Chronos"]
     out[cols] = out[cols].clip(lower=0)
     out.to_parquet(FORECASTS / "direct_agg.parquet", index=False)
     print(out.head())

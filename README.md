@@ -67,6 +67,22 @@ The file is git-ignored. Saved Claude responses are in `outputs/claude_raw/`, so
 
 Then open `notebooks/01_forecast_accuracy.ipynb`; it rebuilds every chart into `outputs/figures/part1/`.
 
+**Dashboard (Shelf Signal v2):**
+```bash
+cd src && ../.venv/bin/python models_ensemble.py && ../.venv/bin/python export_dashboard.py   # writes docs/index.html
+```
+`docs/index.html` is a single self-contained page (data inline, Chart.js from a CDN): open it in any browser.
+It extends our teammate's [Shelf Signal](https://jing0712.github.io/shelf-signal/) with this project's models.
+Template: `dashboard/template.html`. Once the repo is public, GitHub Pages can serve `docs/`.
+
+**Final report (R / Quarto):**
+```bash
+cd src && ../.venv/bin/python export_report_data.py   # writes outputs/results/report/*.csv
+cd ../report && quarto render report.qmd               # report.html and report.pdf (needs R + tidyverse)
+```
+`report/report.qmd` is written in R and reads only the CSVs in `outputs/results/report/`.
+In RStudio, open it and click Render.
+
 ## Project layout
 ```
 data/raw/            M5 csv files (not committed)

@@ -122,7 +122,7 @@ async function main() {
   });
   text(s, "Group 3: Charlotte Zhu, Shihan Wang, Jing Chang, Rachel Liu · Time Series Analysis and Forecasting · UCLA Anderson",
        { x: 0.7, y: 6.6, w: 11.9, h: 0.4, fontSize: 13, color: C.background2 });
-  s.addNotes("SPEAKER 1 (0:45)\n\nGood afternoon, we're Group 3. A retailer's forecast has to do three jobs: be accurate, be cheap and fast enough to run every day for thousands of products, and lead to good stocking decisions.\n\nLightGBM, a machine-learning method, won Walmart's M5 forecasting competition and became the standard. Since then, AI models pre-trained on huge datasets can forecast with no training at all. So we ask two questions. Can pre-trained AI forecast as well as traditional methods, and faster? And does a better forecast actually mean a better replenishment decision?\n\nTRANSITION: Here is the data and how we tested.");
+  s.addNotes("SPEAKER 1 (0:40)\n\nGood afternoon, we're Group 3. A retail forecast has three jobs: be accurate, be cheap and fast enough to run every day for thousands of products, and support good stocking decisions. In Walmart's M5 forecasting competition, LightGBM, a machine-learning method, dominated. Since then, AI models pre-trained on huge datasets can forecast with no training at all. So we ask: can these AI foundation models beat traditional statistical and machine-learning methods, on accuracy and on efficiency?\n\nTRANSITION: Here is our data and how we tested.");
 
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Question and data" });
   s.addText("5,748 daily series, one 28-day test window", { placeholder: "title" });
@@ -146,7 +146,7 @@ async function main() {
     text(s, h, { x: 8.65, y: y + 0.1, w: 3.9, h: 0.45, fontSize: 18, bold: true, color: i === 2 ? HEX.chronos : C.text2, fontFace: THEME.headFontFace });
     text(s, b, { x: 8.65, y: y + 0.55, w: 3.9, h: 0.55, fontSize: 13, color: C.text1, valign: "top" });
   });
-  s.addNotes("SPEAKER 1 (1:15)\n\nWe used Walmart's M5 data: the four California stores and all 1,437 food items, so 5,748 daily series, each one item in one store.\n\nThe split is simple. Every model is trained on data up to May 22, 2016, and forecasts the next 28 days, the official M5 test window. No model sees those days. The one model we tuned, LightGBM, was tuned only on the last 28 days of the training period.\n\nWe score with WRMSSE, the competition's own metric. It scales each product's error by how hard that product is to forecast and weights it by dollar sales; lower is better, and below one beats a naive forecast.\n\nOne caveat up front: everything comes from a single 28-day window, so close rankings could shift in another month.\n\nTRANSITION: Speaker 2 will introduce the models.");
+  s.addNotes("SPEAKER 1 (1:00)\n\nWe used Walmart's M5 data: all 1,437 food items in four California stores, so 5,748 daily series, each one item in one store.\n\nEvery model trains on data up to May 22, 2016, and forecasts the next 28 days, the official M5 test window, which no model sees. The one model we tuned, LightGBM, was tuned only on the last 28 training days.\n\nWe score accuracy with WRMSSE, the competition's own metric: it scales each product's error by how hard it is to forecast and weights it by dollar sales. Lower is better, and below one beats a naive forecast. One caveat up front: this is a single 28-day window.\n\nTRANSITION: Speaker 2 will introduce the models.");
 
   // =============== Speaker 2: statistics, ML and time series foundation models
   pres.addSection({ title: "Models and results" });
@@ -168,7 +168,7 @@ async function main() {
   text(s, [{ text: "Inputs differ: ", options: { bold: true } },
            { text: "AutoETS, AutoARIMA and Chronos see only each series' own history; LightGBM also sees prices and the calendar." }],
        { x: 0.9, y: 5.75, w: 11.6, h: 0.85, fontSize: 15, color: C.text2, valign: "middle" });
-  s.addNotes("SPEAKER 2 (1:00)\n\nWe compared five models. AutoETS and AutoARIMA are classic time series models: they fit one model to each product's own history, with a weekly cycle.\n\nLightGBM is the M5 winner's approach: one machine-learning model trained across all products at once, which then predicts each product. It also sees prices, holidays and food-stamp days.\n\nChronos is Amazon's pre-trained AI model for time series. It was trained on about 100 billion data points from other domains and forecasts our data zero-shot, with no training. And seasonal naive, 'same weekday last week', is the benchmark.\n\nNote that the inputs differ: only LightGBM sees prices and the calendar.\n\nTRANSITION: So how accurate were they?");
+  s.addNotes("SPEAKER 2 (0:50)\n\nWe compared five models. AutoETS and AutoARIMA are classic time series models: they fit one model to each product's own history, with a weekly cycle.\n\nLightGBM is the M5 winner's approach: one machine-learning model trained across all products at once, which then predicts each product. It also sees prices, holidays and food-stamp days.\n\nChronos is Amazon's pre-trained AI model for time series. It was trained on about 100 billion data points from other domains and forecasts our data zero-shot, with no training. And seasonal naive, 'same weekday last week', is the benchmark.\n\nNote that the inputs differ: only LightGBM sees prices and the calendar.\n\nTRANSITION: So how accurate were they?");
 
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Models and results" });
   s.addText("Averaging AutoETS + LightGBM beats every model", { placeholder: "title" });
@@ -183,7 +183,7 @@ async function main() {
     text(s, big, { x: 8.85, y: y + 0.1, w: 3.6, h: 0.75, fontSize: 38, bold: true, color: col, fontFace: THEME.headFontFace });
     text(s, lab, { x: 8.85, y: y + 0.85, w: 3.7, h: 0.45, fontSize: 14, color: C.text1 });
   });
-  s.addNotes("SPEAKER 2 (1:00)\n\nAcross all 5,748 series, LightGBM was the most accurate single model, with a WRMSSE of 0.646. AutoETS, a much simpler statistical model, was close behind at 0.661. These two were the only single models to beat the seasonal-naive benchmark at 0.814; AutoARIMA scored 0.89 and Chronos 0.95.\n\nThe best result came from simply averaging AutoETS and LightGBM: 0.604, better than either, with no tuning. The two make different kinds of errors, so averaging cancels part of them. Our teammate's Shelf Signal study found the same thing on a different store and item set.\n\nTRANSITION: But the overall score hides an important pattern.");
+  s.addNotes("SPEAKER 2 (0:55)\n\nAcross all 5,748 series, LightGBM was the most accurate single model, with a WRMSSE of 0.646. AutoETS, a much simpler statistical model, was close behind at 0.661. These two were the only single models to beat the seasonal-naive benchmark at 0.814; AutoARIMA scored 0.89 and Chronos 0.95.\n\nThe best result came from simply averaging AutoETS and LightGBM: 0.604, better than either, with no tuning. The two make different kinds of errors, so averaging cancels part of them. Our teammate's Shelf Signal study found the same thing on a different store and item set.\n\nTRANSITION: But the overall score hides an important pattern.");
 
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Models and results" });
   s.addText("Rankings change by level; speed differs 200×", { placeholder: "title" });
@@ -206,7 +206,7 @@ async function main() {
   text(s, "Same laptop, one model at a time. Chronos needs no training.", { x: 8.8, y: 5.25, w: 3.9, h: 0.6, fontSize: 12, color: HEX.grey, valign: "top" });
   text(s, "Item level: the models are close, but close is not a statistical tie. Chronos's strength here is speed, not accuracy.",
        { x: 0.6, y: 6.25, w: 12.1, h: 0.45, fontSize: 15, bold: true, color: C.text2 });
-  s.addNotes("SPEAKER 2 (1:00)\n\nThe ranking changes with the level. On the left are store and department totals, where LightGBM and AutoETS are far ahead: they capture the shared weekly pattern. AutoARIMA and Chronos forecast each product separately and give nearly flat lines for slow sellers, so their totals miss the weekend peaks.\n\nOn the right, for one item in one store, all models are close. But close is not the same as a statistical tie; we did not formally test those gaps.\n\nOn speed, the differences are huge. Chronos forecasts everything in 10 seconds with no training. LightGBM and AutoETS take under a minute and a half; AutoARIMA takes 39 minutes. So Chronos's advantage in our study is speed, while its overall accuracy is weaker.\n\nTRANSITION: Speaker 3 will cover our experiment with a general-purpose language model.");
+  s.addNotes("SPEAKER 2 (0:55)\n\nThe ranking changes with the level. On the left are store and department totals, where LightGBM and AutoETS are far ahead: they capture the shared weekly pattern. AutoARIMA and Chronos forecast each product separately and give nearly flat lines for slow sellers, so their totals miss the weekend peaks.\n\nOn the right, for one item in one store, all models are close. But close is not the same as a statistical tie; we did not formally test those gaps.\n\nOn speed, the differences are huge. Chronos forecasts everything in 10 seconds with no training. LightGBM and AutoETS take under a minute and a half; AutoARIMA takes 39 minutes. So Chronos's advantage in our study is speed, while its overall accuracy is weaker.\n\nTRANSITION: Speaker 3 will cover our experiment with a general-purpose language model.");
 
   // =============== Speaker 3: general LLM experiment, risks and mitigations
   pres.addSection({ title: "LLM experiment" });
@@ -254,76 +254,57 @@ async function main() {
   badge(s, I.warn, HEX.amber, 0.78, 6.05, 0.64, "caveat");
   text(s, "The blind test reduces identity cues, but it cannot guarantee that contamination is excluded: the sales pattern itself could be recognised.",
        { x: 1.6, y: 5.95, w: 10.9, h: 0.85, fontSize: 15, bold: true, color: "FFFFFF", valign: "middle" });
-  s.addNotes("SPEAKER 3 (1:00)\n\nForecasting with a language model has four risks. First, contamination: the M5 data is public, so Claude may have seen it in training. Our safeguard was the named-versus-blind test: we removed product names, dates and the year. Accuracy didn't change, 0.579 versus 0.583, so real names gave it no advantage.\n\nSecond, outputs can vary between runs; we fixed the prompt and model and saved every response. Third, cost and scale, which is why we used a subset and compared every model on the same subset. Fourth, malformed answers; we required a fixed format and checked every response.\n\nBut be clear about the limit: the blind test reduces identity cues; it cannot guarantee contamination is excluded, because the sales pattern itself could still be recognised.\n\nTRANSITION: Speaker 4 will turn forecasts into business decisions.");
+  s.addNotes("SPEAKER 3 (0:50)\n\nForecasting with a language model has four risks. First, contamination: the M5 data is public, so Claude may have seen it in training. Our safeguard was the named-versus-blind test: we removed product names, dates and the year. Accuracy didn't change, 0.579 versus 0.583, so real names gave it no advantage.\n\nSecond, outputs can vary between runs; we fixed the prompt and model and saved every response. Third, cost and scale, which is why we used a subset and compared every model on the same subset. Fourth, malformed answers; we required a fixed format and checked every response.\n\nBut be clear about the limit: the blind test reduces identity cues; it cannot guarantee contamination is excluded, because the sales pattern itself could still be recognised.\n\nTRANSITION: Speaker 4 will wrap up and show the dashboard.");
 
-  // =============== Speaker 4: business insight, demo, conclusion
-  pres.addSection({ title: "Business insight and demo" });
-  s = pres.addSlide({ masterName: "Content", sectionTitle: "Business insight and demo" });
-  s.addText("The best order is not the forecast", { placeholder: "title" });
-  const nb = DATA.nb;
-  const lab = nb.x.map(String);
-  const sel = k => nb.x.map((x, i) => (k(x) ? nb.pmf[i] : 0));
-  s.addChart(pres.charts.BAR, [
-    { name: "Other demand levels", labels: lab, values: sel(x => x !== nb.p20 && x !== nb.p80) },
-    { name: "Order at 20% margin (P20)", labels: lab, values: sel(x => x === nb.p20) },
-    { name: "Order at 80% margin (P80)", labels: lab, values: sel(x => x === nb.p80) },
-  ], { x: 0.6, y: 1.5, w: 7.0, h: 4.8, ...chartText, barDir: "col", barGrouping: "stacked", barGapWidthPct: 30,
-    chartColors: ["C9CCD3", HEX.chronos, HEX.lgb], valAxisLabelFormatCode: "0%", valAxisMinVal: 0,
-    showLegend: true, legendPos: "b", legendFontSize: 12, legendColor: HEX.ink, showTitle: true,
-    title: `Daily demand for an item that sells ${nb.mean} a day on average`, objectName: "demand distribution chart",
-    showCatAxisTitle: true, catAxisTitle: "Units demanded", catAxisTitleColor: HEX.grey, catAxisTitleFontSize: 12, catAxisTitleFontFace: "+mn-lt" });
-  card(s, 8.0, 1.55, 4.7, 1.45, "formula card");
-  text(s, "Q* = F⁻¹(margin)", { x: 8.25, y: 1.6, w: 4.3, h: 0.75, fontSize: 30, bold: true, color: C.text2, fontFace: THEME.headFontFace });
-  text(s, "Order the demand quantile set by the margin (no salvage value)", { x: 8.25, y: 2.35, w: 4.3, h: 0.6, fontSize: 13, color: C.text1 });
+  // =============== Speaker 4: answer, limitations (incl. the newsvendor business problem), demo
+  pres.addSection({ title: "Answer and demo" });
+  s = pres.addSlide({ masterName: "Closing Dark", sectionTitle: "Answer and demo" });
+  s.addText("Our answer: not yet on accuracy, yes on speed", { placeholder: "title" });
+  const take = [
+    [I.lgb, HEX.lgb, "Traditional methods lead on accuracy", "LightGBM, AutoETS and their average are the three best"],
+    [I.chronos, HEX.chronos, "Chronos wins on speed", "10 s for all series, no training"],
+    [I.claude, HEX.claude, "Claude matched the best on totals", "Promising, but tested on 112 series only"],
+  ];
+  take.forEach(([img, col, h, b], i) => {
+    const y = 1.6 + i * 1.35;
+    badge(s, img, col, 0.6, y, 0.8, h);
+    text(s, h, { x: 1.6, y, w: 5.4, h: 0.45, fontSize: 19, bold: true, color: C.background1 });
+    text(s, b, { x: 1.6, y: y + 0.48, w: 5.4, h: 0.45, fontSize: 14, color: C.background2 });
+  });
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 7.3, y: 1.5, w: 5.4, h: 5.0, rectRadius: 0.12, fill: { color: HEX.tint }, line: { color: HEX.tint }, objectName: "limitations card" });
+  badge(s, I.warn, HEX.amber, 7.6, 1.75, 0.65, "limitations");
+  text(s, "Limitations", { x: 8.4, y: 1.75, w: 4.0, h: 0.65, fontSize: 19, bold: true, color: C.background1, valign: "middle" });
   text(s, [
-    { text: `20% margin: wasted stock costs more, so order low (P20 = ${nb.p20} units)`, options: { bullet: true, breakLine: true } },
-    { text: `80% margin: a lost sale costs more, so order high (P80 = ${nb.p80} units)`, options: { bullet: true, breakLine: true } },
-    { text: "Needs the full demand distribution, not just the point forecast", options: { bullet: true, breakLine: true } },
-    { text: "Our test: more accurate forecasts earned significantly more only at an 80% margin", options: { bullet: true, bold: true } },
-  ], { x: 8.0, y: 3.2, w: 4.7, h: 3.1, fontSize: 15, color: C.text1, paraSpaceAfter: 8, valign: "top" });
-  s.addNotes(`SPEAKER 4 (1:15)\n\nA forecast only matters through the decision it drives. Here is the key business insight: the best order quantity is not the forecast.\n\nThis is the newsvendor problem. If leftover food has no salvage value, you should order the demand level you will meet with probability equal to your profit margin. Take an item that sells ${nb.mean} units a day on average. With a 20% margin, every wasted unit costs four times a lost sale, so you order low, at the 20th percentile: ${nb.p20} units. With an 80% margin it's the reverse: order high, at the 80th percentile, ${nb.p80} units.\n\nSo a retailer needs the whole demand distribution, not just one number. And when we tested this, more accurate forecasts earned significantly more only at an 80% margin; at typical margins the profit differences were within chance.\n\nTRANSITION: Let me show you this in our dashboard.`);
+    { text: "One 28-day test window: close rankings could flip in another month.", options: { bullet: true, breakLine: true } },
+    { text: "Claude: 112 series only; the blind test can't fully rule out contamination.", options: { bullet: true, breakLine: true } },
+    { text: "Accuracy is not the business goal. Ordering is a newsvendor problem: running out costs the margin (underage), unsold food costs its price (overage). The best order is a margin-set quantile, not the forecast, and our accuracy metrics weigh both errors equally.", options: { bullet: true } },
+  ], { x: 7.6, y: 2.6, w: 4.9, h: 3.7, fontSize: 14, color: C.background2, paraSpaceAfter: 8, valign: "top" });
+  s.addNotes("SPEAKER 4 (1:20)\n\nSo, can AI foundation models beat traditional methods? Our answer: not yet on accuracy, yes on speed. LightGBM, AutoETS and their simple average were the three most accurate. Chronos was the clear winner on speed: ten seconds, no training. And Claude matched the best traditional approach on store totals, but on only 112 series.\n\nThree limitations. First, we tested one 28-day window, so close rankings could flip in another month. Second, Claude was tested on a subset, and our blind test can't fully rule out that it saw this public data.\n\nThird, and most important for a business: accuracy isn't the real goal. Ordering stock is a newsvendor problem with two different costs. If you order too little, you lose the margin on every sale you miss; that's the underage cost. If you order too much, unsold food is wasted at its cost; that's the overage cost. Because those costs depend on the margin, the best order isn't the forecast itself but a quantile of demand. Our accuracy metrics treat over- and under-forecasting the same, so they don't capture this. Let me show you in our dashboard.\n\nTRANSITION: switch to the demo.");
 
-  s = pres.addSlide({ masterName: "Content", sectionTitle: "Business insight and demo" });
-  s.addText("Demo: Shelf Signal v2 dashboard", { placeholder: "title" });
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Answer and demo" });
+  s.addText("Demo: Shelf Signal dashboard", { placeholder: "title" });
   const SHOT = process.argv[4];
   const LIVE = "https://shihan-2002.github.io/shelf-signal-dashboard/#planner";
   s.addShape(pres.shapes.RECTANGLE, { x: 0.6, y: 1.5, w: 7.2, h: 4.78, fill: { color: "FFFFFF" }, line: { color: HEX.line, width: 1 }, objectName: "screenshot frame" });
   s.addImage({ path: SHOT, x: 0.62, y: 1.52, w: 7.16, h: 4.74, hyperlink: { url: LIVE, tooltip: "Open the live dashboard" },
     altText: "Shelf Signal order planner: demand distribution, order quantity and profit by model", objectName: "dashboard screenshot" });
-  text(s, [{ text: "Open live dashboard \u2197", options: { hyperlink: { url: LIVE, tooltip: "Opens in your browser" }, bold: true, color: HEX.lgb } },
-           { text: "   \u00b7   ", options: { color: HEX.grey } },
-           { text: "Offline copy (docs/index.html)", options: { hyperlink: { url: "../docs/index.html", tooltip: "Opens the local copy" }, color: HEX.lgb } }],
+  text(s, [{ text: "Open live dashboard ↗", options: { hyperlink: { url: LIVE, tooltip: "Opens in your browser" }, bold: true, color: HEX.lgb } },
+           { text: "   ·   ", options: { color: HEX.grey } },
+           { text: "shihan-2002.github.io/shelf-signal-dashboard", options: { hyperlink: { url: LIVE }, color: HEX.lgb } }],
        { x: 0.6, y: 6.35, w: 7.2, h: 0.4, fontSize: 13 });
   const demo = [
-    [I.play, "Forecast explorer: pick a series and models", "Replay forecasts against what actually sold"],
-    [I.sliders, "Order planner: change the margin", "Same forecast; the order moves from P20 to P80"],
-    [I.check, "Profit scored with actual sales", "Actuals are used only after the fact"],
+    [I.play, "Forecast explorer", "One store's department: every model against actual sales"],
+    [I.layers, "AI lab", "Claude's own reasoning, and the named-vs-blind test"],
+    [I.sliders, "Order planner", "Change the margin: the order moves between P20 and P80"],
   ];
   demo.forEach(([img, h, b], i) => {
-    const y = 1.55 + i * 1.45;
-    badge(s, img, HEX.navy, 8.4, y + 0.1, 0.75, h);
-    text(s, String(i + 1) + ". " + h, { x: 9.35, y, w: 3.4, h: 0.55, fontSize: 16, bold: true, color: C.text2, valign: "bottom" });
-    text(s, b, { x: 9.35, y: y + 0.6, w: 3.4, h: 0.7, fontSize: 14, color: C.text1, valign: "top" });
+    const y = 1.55 + i * 1.3;
+    badge(s, img, HEX.navy, 8.4, y + 0.05, 0.75, h);
+    text(s, h, { x: 9.35, y, w: 3.4, h: 0.45, fontSize: 17, bold: true, color: C.text2, valign: "bottom" });
+    text(s, b, { x: 9.35, y: y + 0.48, w: 3.4, h: 0.7, fontSize: 14, color: C.text1, valign: "top" });
   });
-  text(s, "Click the screenshot or the link to switch to the browser; Cmd+Tab back to the slides. Backup: screen recording.",
-       { x: 8.4, y: 5.95, w: 4.3, h: 0.6, fontSize: 12, italic: true, color: HEX.grey, valign: "top" });
-  s.addNotes("SPEAKER 4 (1:15)\n\n[LIVE DEMO. If the connection fails, play the screen recording.]\n\nThis is Shelf Signal version 2, which extends our teammate's original dashboard with all of this project's models. First, in the Forecast explorer, I pick a series, say a store's dairy department, and replay each model's forecast against what actually sold.\n\nSecond, in the Order planner, I keep the forecast fixed and change the profit margin. Watch the recommended order: at a low margin it sits near the 20th percentile of demand, and as the margin rises it moves toward the 80th. The table below scores every model's orders against actual sales. Same forecast, different decision.\n\nThird, note that actual sales are only used to evaluate the forecast afterwards; the forecasts never see the test days.\n\nHOW TO DEMO: in Slide Show mode, click the screenshot (or 'Open live dashboard'). The browser opens on the Order planner. Do the demo, then press Cmd+Tab to return to PowerPoint. Before presenting: open the link once so it loads instantly; keep the screen recording ready as a backup.\n\nTRANSITION: To wrap up.");
-
-  s = pres.addSlide({ masterName: "Closing Dark", sectionTitle: "Business insight and demo" });
-  s.addText("Takeaways", { placeholder: "title" });
-  const take = [
-    [I.lgb, HEX.lgb, "Traditional methods lead on accuracy: LightGBM, AutoETS and their average"],
-    [I.chronos, HEX.chronos, "Chronos offers a large speed advantage, with weaker accuracy here"],
-    [I.claude, HEX.claude, "Claude matched the best traditional approach on totals; evidence is limited"],
-    [I.order, HEX.amber, "Good replenishment depends on costs and uncertainty, not accuracy alone"],
-  ];
-  take.forEach(([img, col, h], i) => {
-    const y = 1.55 + i * 1.05;
-    badge(s, img, col, 0.8, y, 0.8, h);
-    text(s, h, { x: 1.85, y, w: 10.8, h: 0.8, fontSize: 22, bold: true, color: C.background1, valign: "middle" });
-  });
-  text(s, "Thank you — questions?", { x: 0.8, y: 6.0, w: 11.0, h: 0.7, fontSize: 30, bold: true, color: HEX.amber, fontFace: THEME.headFontFace });
-  s.addNotes("SPEAKER 4 (0:30)\n\nTo sum up: traditional methods still lead on accuracy. LightGBM is the best single model, AutoETS is close behind, and simply averaging the two is best of all. Chronos offers a huge speed advantage, though its accuracy was weaker here. Claude matched the best traditional approach on the store totals, but on limited evidence. And good replenishment depends on costs and uncertainty, not on accuracy alone.\n\nThank you; we're happy to take questions.");
+  text(s, "Thank you — questions?", { x: 8.4, y: 5.55, w: 4.3, h: 0.7, fontSize: 26, bold: true, color: HEX.navy, fontFace: THEME.headFontFace });
+  s.addNotes("SPEAKER 4 (1:30 demo + 0:10 close)\n\n[Click the screenshot to open the dashboard. If the internet fails, play the screen recording.]\n\n(0:00-0:20) FORECAST EXPLORER. This is Shelf Signal, which extends our teammate's original dashboard with all our models. Here's one store's department total: the black line is actual sales, and you can switch each model on and off. The ensemble and LightGBM follow the weekend peaks; Chronos runs low.\n\n(0:20-0:40) AI LAB. Here Claude explains its own forecast in plain English, and this chart is the named-versus-blind test: every point sits on the diagonal, so real names gave it no advantage.\n\n(0:40-1:30) ORDER PLANNER. Now the business problem. For this item, the model forecasts about eight units for the day. At a 50% margin, the best order is the median of demand. Drop the margin to 20%: a wasted unit now costs four times a lost sale, so the order falls. Raise it to 80%: a lost sale costs four times a wasted unit, so we order more. Same forecast, different decision. The table scores every model's orders against actual sales: the profit ranking isn't the same as the accuracy ranking, and at typical margins the differences are small.\n\n(close) That's our project. Thank you, and we're happy to take questions.\n\n[Press Cmd+Tab to return to the slides for Q&A.]");
 
   await pres.writeFile({ fileName: OUT });
   await applyTheme(OUT, THEME);

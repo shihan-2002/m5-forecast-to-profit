@@ -160,15 +160,16 @@ async function main() {
     ["Chronos", HEX.chronos, "AI foundation model", "Pre-trained by Amazon, zero-shot: no training on our data", "Own history"],
     ["Ensemble", HEX.ens, "Combination", "Unweighted average of AutoETS and LightGBM", "Their two forecasts"],
     ["Seasonal naive", HEX.naive, "Benchmark", "Repeats the same weekday last week", "Last week"],
+    ["Claude (experiment)", HEX.claude, "General-purpose AI", "Reads sales as text and reasons; 112 series only", "History + price, calendar"],
   ].map(([m, col, fam, fit, sees]) => [
     { text: m, options: { bold: true, color: col } }, { text: fam }, { text: fit }, { text: sees }]);
   s.addTable([hdr, ...rowsM], { x: 0.6, y: 1.5, w: 12.1, colW: [2.1, 2.4, 4.6, 3.0], fontSize: 15, color: HEX.ink,
-    border: { type: "solid", pt: 0.75, color: HEX.line }, rowH: 0.56, valign: "middle", margin: 0.08, objectName: "models table" });
-  card(s, 0.6, 5.75, 12.1, 0.85, "inputs note");
+    border: { type: "solid", pt: 0.75, color: HEX.line }, rowH: 0.5, valign: "middle", margin: 0.08, objectName: "models table" });
+  card(s, 0.6, 6.1, 12.1, 0.7, "inputs note");
   text(s, [{ text: "Inputs differ: ", options: { bold: true } },
-           { text: "AutoETS, AutoARIMA and Chronos see only each series' own history; LightGBM also sees prices and the calendar." }],
-       { x: 0.9, y: 5.75, w: 11.6, h: 0.85, fontSize: 15, color: C.text2, valign: "middle" });
-  s.addNotes("SPEAKER 2 (1:05)\n\nWe compared five models. AutoETS and AutoARIMA are classic time series models: they fit one model to each product's own history, with a weekly cycle.\n\nLightGBM is the dominant approach for this kind of retail data; it dominated the M5 competition. It is one machine-learning model trained across all products at once, which then predicts each product. It also sees prices, holidays and food-stamp days.\n\nChronos is Amazon's pre-trained AI model for time series, trained on about 100 billion data points from energy, traffic, weather and more. It was not trained on M5 or on any retail data, so this is a true zero-shot test. Seasonal naive, 'same weekday last week', is the benchmark.\n\nWe also test the simplest possible combination: an unweighted average of AutoETS and LightGBM. Note that the inputs differ: only LightGBM sees prices and the calendar.\n\nTRANSITION: So, traditional models or AI: round one, accuracy.");
+           { text: "AutoETS, AutoARIMA and Chronos see only each series' own history; LightGBM and Claude also see prices and the calendar." }],
+       { x: 0.9, y: 6.1, w: 11.6, h: 0.7, fontSize: 14, color: C.text2, valign: "middle" });
+  s.addNotes("SPEAKER 2 (1:05)\n\nWe compared five models. AutoETS and AutoARIMA are classic time series models: they fit one model to each product's own history, with a weekly cycle.\n\nLightGBM is the dominant approach for this kind of retail data; it dominated the M5 competition. It is one machine-learning model trained across all products at once, which then predicts each product. It also sees prices, holidays and food-stamp days.\n\nChronos is Amazon's pre-trained AI model for time series, trained on about 100 billion data points from energy, traffic, weather and more. It was not trained on M5 or on any retail data, so this is a true zero-shot test. Seasonal naive, 'same weekday last week', is the benchmark.\n\nWe also test the simplest possible combination: an unweighted average of AutoETS and LightGBM. And as an experiment, a second AI joins on a subset of series: Claude, a general-purpose language model, which we'll come back to in round three. Note that the inputs differ: only LightGBM and Claude see prices and the calendar.\n\nTRANSITION: So, traditional models or AI: round one, accuracy.");
 
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Models and results" });
   s.addText("Averaging AutoETS + LightGBM beats every model", { placeholder: "title" });

@@ -169,45 +169,70 @@ async function main() {
   text(s, [{ text: "Inputs differ: ", options: { bold: true } },
            { text: "AutoETS, AutoARIMA and Chronos see only each series' own history; LightGBM and Claude also see prices and the calendar." }],
        { x: 0.9, y: 6.1, w: 11.6, h: 0.7, fontSize: 14, color: C.text2, valign: "middle" });
-  s.addNotes("SPEAKER 2 (1:05)\n\nWe compared five models. AutoETS and AutoARIMA are classic time series models: they fit one model to each product's own history, with a weekly cycle.\n\nLightGBM is the dominant approach for this kind of retail data; it dominated the M5 competition. It is one machine-learning model trained across all products at once, which then predicts each product. It also sees prices, holidays and food-stamp days.\n\nChronos is Amazon's pre-trained AI model for time series, trained on about 100 billion data points from energy, traffic, weather and more. It was not trained on M5 or on any retail data, so this is a true zero-shot test. Seasonal naive, 'same weekday last week', is the benchmark.\n\nWe also test the simplest possible combination: an unweighted average of AutoETS and LightGBM. And as an experiment, a second AI joins on a subset of series: Claude, a general-purpose language model, which we'll come back to in round three. Note that the inputs differ: only LightGBM and Claude see prices and the calendar.\n\nTRANSITION: So, traditional models or AI: round one, accuracy.");
+  s.addNotes("SPEAKER 2 (1:05)\n\nWe compared five models. AutoETS and AutoARIMA are classic time series models: they fit one model to each product's own history, with a weekly cycle.\n\nLightGBM is the dominant approach for this kind of retail data; it dominated the M5 competition. It is one machine-learning model trained across all products at once, which then predicts each product. It also sees prices, holidays and food-stamp days.\n\nChronos is Amazon's pre-trained AI model for time series, trained on about 100 billion data points from energy, traffic, weather and more. It was not trained on M5 or on any retail data, so this is a true zero-shot test. Seasonal naive, 'same weekday last week', is the benchmark.\n\nWe also test the simplest possible combination: an unweighted average of AutoETS and LightGBM. And as an experiment, a second AI joins on a subset of series: Claude, a general-purpose language model, which we'll come back to later. Note that the inputs differ: only LightGBM and Claude see prices and the calendar.\n\nTRANSITION: So which model is best, and at what? Here's the scorecard.");
 
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Models and results" });
-  s.addText("Averaging AutoETS + LightGBM beats every model", { placeholder: "title" });
-  const accRows = [["Ensemble", DATA.acc.Ensemble], ["LightGBM", DATA.acc.LightGBM], ["AutoETS", DATA.acc.AutoETS], ["Seasonal naive", DATA.acc.SeasonalNaive],
-                   ["AutoARIMA", DATA.acc.AutoARIMA], ["Chronos", DATA.acc.Chronos]];
-  hbar(s, accRows, r => famColor(r[0]), { x: 0.6, y: 1.5, w: 7.6, h: 4.9, barGapWidthPct: 55, showTitle: true,
-    title: "WRMSSE, all 5,748 series (lower is better)", objectName: "WRMSSE chart" });
-  [["0.604", "Ensemble: best overall, no tuning", HEX.ens], ["0.646", "LightGBM: best single model", HEX.lgb],
-   ["0.661", "AutoETS: close behind", HEX.ets]].forEach(([big, lab, col], i) => {
-    const y = 1.6 + i * 1.6;
-    card(s, 8.6, y, 4.1, 1.4, "acc stat " + i);
-    text(s, big, { x: 8.85, y: y + 0.1, w: 3.6, h: 0.75, fontSize: 38, bold: true, color: col, fontFace: THEME.headFontFace });
-    text(s, lab, { x: 8.85, y: y + 0.85, w: 3.7, h: 0.45, fontSize: 14, color: C.text1 });
-  });
-  s.addNotes("SPEAKER 2 (1:05)\n\nRound one: accuracy, traditional models against AI. Here the scoreboard is clear: traditional methods win. The three most accurate forecasts are all traditional: the simple average of AutoETS and LightGBM at 0.604, LightGBM alone at 0.646, and AutoETS at 0.661. The AI model, Chronos, comes last at 0.949, with errors more than 50% larger than the best traditional forecast, and behind even the 'same as last week' benchmark at 0.814.\n\nWhy does the AI lose this round? Chronos has never seen our data, and it reads each product on its own, so it can't learn what all products share, like the weekend rush; it also forecasts about 11% too low overall. LightGBM learns from all 5,748 products at once, and averaging it with AutoETS cancels part of each one's mistakes, which is why the combination wins. Our teammate's Shelf Signal study found the same on a different store.\n\n(OPTIONAL) One nuance: measured product by product, with plain average error, Chronos has the lowest error of any single model; its mistakes only become costly once they add up across products.\n\nPOINT AT: the top bar (0.604), then the Chronos bar at the bottom.\n\nTRANSITION: That's round one to traditional methods. But the score changes when we zoom in, and when we start the clock.");
+  s.addText("Traditional wins accuracy; AI wins speed", { placeholder: "title" });
+  {
+    const A = DATA.acc, MT = DATA.mape_total, IR = DATA.item_rmsse;
+    const rows = [
+      ["Ensemble (AutoETS + LightGBM)", HEX.ens, A.Ensemble, MT.Ensemble, IR.Ensemble, "~3 min", "Yes"],
+      ["LightGBM", HEX.lgb, A.LightGBM, MT.LightGBM, IR.LightGBM, "80 s", "Yes"],
+      ["AutoETS", HEX.ets, A.AutoETS, MT.AutoETS, IR.AutoETS, "86 s", "Yes"],
+      ["AutoARIMA", HEX.arima, A.AutoARIMA, MT.AutoARIMA, IR.AutoARIMA, "39 min", "Yes"],
+      ["Chronos (AI)", HEX.chronos, A.Chronos, MT.Chronos, IR.Chronos, "10 s", "None"],
+      ["Seasonal naive (benchmark)", HEX.naive, A.SeasonalNaive, MT.SeasonalNaive, IR.SeasonalNaive, "<1 s", "None"],
+    ];
+    const contenders = rows.slice(0, 5);
+    const minOf = k => Math.min(...contenders.map(r => r[k]));
+    const best = { 2: minOf(2), 3: minOf(3), 4: minOf(4) };
+    const WIN = "DDF2E3";
+    const hdr = ["Model", "Overall accuracy\n(WRMSSE)", "Store totals\n(daily error)", "Single items\n(RMSSE)", "Time for\nall series", "Training\nneeded"]
+      .map(t => ({ text: t, options: { bold: true, color: "FFFFFF", fill: { color: HEX.navy }, align: "center" } }));
+    hdr[0].options.align = "left";
+    const body = rows.map((r, i) => {
+      const bench = i === 5;
+      const cell = (txt, win) => ({ text: txt, options: { align: "center", bold: win, fill: { color: win ? WIN : "FFFFFF" }, color: bench ? HEX.grey : HEX.ink } });
+      return [
+        { text: r[0], options: { bold: true, color: r[1] } },
+        cell(r[2].toFixed(3), !bench && r[2] === best[2]),
+        cell(r[3].toFixed(1) + "%", !bench && r[3] === best[3]),
+        cell(r[4].toFixed(2), !bench && Math.abs(r[4] - best[4]) < 0.005 && r[4] <= best[4] + 0.0),
+        cell(r[5], i === 4),
+        cell(r[6], i === 4),
+      ];
+    });
+    s.addTable([hdr, ...body], { x: 0.6, y: 1.5, w: 12.1, colW: [3.4, 1.85, 1.85, 1.75, 1.65, 1.6], fontSize: 15, color: HEX.ink,
+      border: { type: "solid", pt: 0.75, color: HEX.line }, rowH: [0.75, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55], valign: "middle", margin: 0.08, objectName: "scorecard table" });
+    text(s, "Green = best in its column (benchmark excluded)", { x: 0.6, y: 5.5, w: 12.1, h: 0.3, fontSize: 11, color: HEX.grey, align: "right" });
+    card(s, 0.6, 6.0, 12.1, 0.8, "scorecard summary");
+    text(s, [{ text: "Best traditional choice: ", options: { bold: true, color: HEX.ens } }, { text: "the AutoETS + LightGBM average, for accuracy.   " },
+             { text: "Best AI strength: ", options: { bold: true, color: HEX.chronos } }, { text: "Chronos, for speed with no training." }],
+         { x: 0.9, y: 6.0, w: 11.6, h: 0.8, fontSize: 14, color: C.text1, valign: "middle" });
+  }
+  s.addNotes("SPEAKER 2 (1:00)\n\nHere is the scorecard: traditional models against AI, on four questions. Who is most accurate overall? A traditional model: the simple average of AutoETS and LightGBM, with LightGBM alone second and AutoETS close behind. Who forecasts store totals best? Again the traditional models. For single products? It's close, and there the AI is level with LightGBM. And who is fastest? The AI, Chronos, by far: seconds instead of minutes, with no training at all.\n\nSo from a traditional point of view, the best choice is the AutoETS-plus-LightGBM average, and the AI's real strength is speed. The green cells show the winner of each column.\n\nPOINT AT: the green cells, column by column.\n\nTRANSITION: Let's see what those forecasts actually look like.");
 
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Models and results" });
-  s.addText("Rankings change by level; speed differs 200×", { placeholder: "title" });
-  const L = DATA.levels;
-  s.addChart(pres.charts.LINE, [
-    { name: "LightGBM", labels: L.labels, values: L.LightGBM }, { name: "AutoETS", labels: L.labels, values: L.AutoETS },
-    { name: "AutoARIMA", labels: L.labels, values: L.AutoARIMA }, { name: "Chronos", labels: L.labels, values: L.Chronos },
-    { name: "Seasonal naive", labels: L.labels, values: L.SeasonalNaive },
-  ], { x: 0.6, y: 1.5, w: 7.8, h: 4.6, ...chartText, chartColors: [HEX.lgb, HEX.ets, HEX.arima, HEX.chronos, HEX.naive],
-    lineSize: 2, lineDataSymbolSize: 7, valAxisMinVal: 0.2, valAxisMaxVal: 1.3, valAxisLabelFormatCode: "0.0",
-    showLegend: true, legendPos: "b", legendFontSize: 12, legendColor: HEX.ink, showTitle: true,
-    title: "Error by level: summed over many items (left) to one item in one store (right)", objectName: "level chart" });
-  text(s, "Time to forecast all 5,748 series", { x: 8.8, y: 1.55, w: 3.9, h: 0.4, fontSize: 15, bold: true, color: C.text2 });
-  [["Chronos", "10 s", HEX.chronos], ["LightGBM", "80 s", HEX.lgb], ["AutoETS", "86 s", HEX.ets], ["AutoARIMA", "39 min", HEX.arima]].forEach(([m, t, col], i) => {
-    const y = 2.05 + i * 0.78;
-    card(s, 8.8, y, 3.9, 0.66, "time " + m);
-    text(s, m, { x: 9.05, y, w: 2.0, h: 0.66, fontSize: 16, bold: true, color: col, valign: "middle" });
-    text(s, t, { x: 10.9, y, w: 1.6, h: 0.66, fontSize: 20, bold: true, color: C.text2, align: "right", valign: "middle", fontFace: THEME.headFontFace });
-  });
-  text(s, "Same laptop, one model at a time. Chronos needs no training.", { x: 8.8, y: 5.25, w: 3.9, h: 0.6, fontSize: 12, color: HEX.grey, valign: "top" });
-  text(s, "Item level: the models are close, but close is not a statistical tie. Chronos's strength here is speed, not accuracy.",
-       { x: 0.6, y: 6.25, w: 12.1, h: 0.45, fontSize: 15, bold: true, color: C.text2 });
-  s.addNotes("SPEAKER 2 (1:10)\n\nRound two: where, and how fast. Zoom in to a single product in a single store, the right side of this chart, and the AI catches up. There, Chronos is level with LightGBM, and it is the most accurate model on 27% of products. The traditional advantage sits at the store and department level, where learning across products pays off; for a single product, daily sales are mostly noise, and no model stands out.\n\nOn speed, the AI wins outright. Chronos produced all 5,748 forecasts in ten seconds, with no training at all. LightGBM and AutoETS needed about a minute and a half; AutoARIMA needed 39 minutes, more than 200 times longer. For a retailer re-forecasting thousands of products every day, that difference decides what is practical.\n\nTRANSITION: So a specialist AI is fast but less accurate. Round three: a generalist AI that reads and reasons. Speaker 3.");
+  s.addText("Traditional tracks the peaks; the AI runs low", { placeholder: "title" });
+  {
+    const T = DATA.test;
+    s.addChart(pres.charts.LINE, [
+      { name: "Actual sales", labels: T.labels, values: T.y }, { name: "Ensemble (traditional)", labels: T.labels, values: T.Ensemble },
+      { name: "AutoARIMA (traditional)", labels: T.labels, values: T.AutoARIMA }, { name: "Chronos (AI)", labels: T.labels, values: T.Chronos },
+    ], { x: 0.6, y: 1.5, w: 8.2, h: 4.9, ...chartText, chartColors: [HEX.ink, HEX.ens, HEX.arima, HEX.chronos],
+      lineSize: 2.25, lineDataSymbol: "none", showLegend: true, legendPos: "b", legendFontSize: 12, legendColor: HEX.ink,
+      valAxisLabelFormatCode: "#,##0", valAxisMinVal: 9000, catAxisLabelFrequency: 7, catAxisLabelRotate: 0, catAxisMajorTickMark: "none",
+      showTitle: true, title: "Total daily units, all 4 stores, during the 28-day test window", objectName: "forecast chart" });
+    [["Follows the peaks", "The traditional average rises and falls with every weekend", HEX.ens],
+     ["Flat line", "AutoARIMA's product-by-product forecasts add up to a flat total", HEX.arima],
+     ["Right shape, too low", "Chronos sees the weekly rhythm but forecasts about 11% low", HEX.chronos]].forEach(([h, b, col], i) => {
+      const y = 1.6 + i * 1.55;
+      card(s, 9.1, y, 3.6, 1.35, "forecast note " + i);
+      text(s, h, { x: 9.35, y: y + 0.12, w: 3.2, h: 0.45, fontSize: 17, bold: true, color: col, fontFace: THEME.headFontFace });
+      text(s, b, { x: 9.35, y: y + 0.6, w: 3.2, h: 0.7, fontSize: 13, color: C.text1, valign: "top" });
+    });
+  }
+  s.addNotes("SPEAKER 2 (1:00)\n\nHere's what that looks like. The black line is actual daily sales across all four stores during the test month. The traditional average, in teal, rises and falls with every weekend peak. AutoARIMA, in green, is almost flat, and Chronos, in orange, has the right shape but sits too low.\n\nWhy? AutoARIMA and Chronos look at one product at a time. For a product that sells a unit or two a day, the best guess is a flat line, and thousands of flat lines added up miss the weekend. LightGBM learns from all products together, so it sees the weekend rush, and averaging it with AutoETS smooths out the rest. Zoom into a single product, though, and the lines come together: one product's daily sales are mostly noise.\n\nTRANSITION: So the specialist AI is fast but less accurate. What about a generalist AI that reads and reasons? Speaker 3.");
 
   // =============== Speaker 3: general LLM experiment, risks and mitigations
   pres.addSection({ title: "LLM experiment" });

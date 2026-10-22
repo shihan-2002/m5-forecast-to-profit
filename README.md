@@ -67,12 +67,12 @@ The file is git-ignored. Saved Claude responses are in `outputs/claude_raw/`, so
 
 Then open `notebooks/01_forecast_accuracy.ipynb`; it rebuilds every chart into `outputs/figures/part1/`.
 
-**Dashboard (Shelf Signal v2):** live at https://shihan-2002.github.io/shelf-signal-dashboard/ (deployed from the `shelf-signal-dashboard` repo; after rebuilding, copy `docs/index.html` there as `index.html` and push).
+**Dashboard (Shelf Signal):** live at https://jing0712.github.io/shelf-signal/#planner (hosted on our teammate's site; after rebuilding, `docs/index.html` is the page to deploy).
 ```bash
 cd src && ../.venv/bin/python models_ensemble.py && ../.venv/bin/python export_dashboard.py   # writes docs/index.html
 ```
 `docs/index.html` is a single self-contained page (data inline, Chart.js from a CDN): open it in any browser.
-It extends our teammate's [Shelf Signal](https://jing0712.github.io/shelf-signal/) with this project's models.
+It extends our teammate's original Shelf Signal ([code](https://github.com/Jing0712/shelf-signal)) with this project's models.
 Template: `dashboard/template.html`. Once the repo is public, GitHub Pages can serve `docs/`.
 
 **Final report (R / Quarto):**

@@ -311,13 +311,13 @@ async function main() {
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Answer and demo" });
   s.addText("Demo: Shelf Signal dashboard", { placeholder: "title" });
   const SHOT = process.argv[4];
-  const LIVE = "https://shihan-2002.github.io/shelf-signal-dashboard/#planner";
+  const LIVE = "https://jing0712.github.io/shelf-signal/#planner";
   s.addShape(pres.shapes.RECTANGLE, { x: 0.6, y: 1.5, w: 7.2, h: 4.78, fill: { color: "FFFFFF" }, line: { color: HEX.line, width: 1 }, objectName: "screenshot frame" });
   s.addImage({ path: SHOT, x: 0.62, y: 1.52, w: 7.16, h: 4.74, hyperlink: { url: LIVE, tooltip: "Open the live dashboard" },
     altText: "Shelf Signal order planner: demand distribution, order quantity and profit by model", objectName: "dashboard screenshot" });
   text(s, [{ text: "Open live dashboard ↗", options: { hyperlink: { url: LIVE, tooltip: "Opens in your browser" }, bold: true, color: HEX.lgb } },
            { text: "   ·   ", options: { color: HEX.grey } },
-           { text: "shihan-2002.github.io/shelf-signal-dashboard", options: { hyperlink: { url: LIVE }, color: HEX.lgb } }],
+           { text: "jing0712.github.io/shelf-signal", options: { hyperlink: { url: LIVE }, color: HEX.lgb } }],
        { x: 0.6, y: 6.35, w: 7.2, h: 0.4, fontSize: 13 });
   const demo = [
     [I.play, "Forecast explorer", "One store's department: every model against actual sales"],

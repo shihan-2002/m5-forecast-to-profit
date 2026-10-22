@@ -303,7 +303,7 @@ On the 12 totals, Claude (`r f3(cl("Claude (named)", "store x dept"))` named, `r
 
 | | Chronos | Claude |
 |---|---|---|
-| Trained on | Time series (about 100 billion observations, no retail data) | Text and code |
+| Trained on | Time series (about 100 billion observations; M5 held out) | Text and code |
 | Reads our data as | Numbers (scaled and tokenised) | Text, one row per day |
 | Inputs used | Sales history only | Sales history, calendar, price |
 | Output | Quantile forecasts | Point forecast, percentiles and a written explanation |

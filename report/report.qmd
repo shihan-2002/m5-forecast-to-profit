@@ -61,6 +61,13 @@ best      <- rd("item_best_share.csv")
 by_zero   <- rd("item_rmsse_by_zero_share.csv")
 nv_boot   <- rd("newsvendor_bootstrap.csv")
 nv_pred   <- rd("newsvendor_predicted_vs_actual.csv")
+nv_prof   <- rd("profit.csv") |> filter(model %in% c("AutoETS", "LightGBM", "Ensemble", "Chronos"), policy %in% c("point", "nb"))
+pol_gap <- function(m, mod = "Ensemble") {
+  x <- nv_prof |> filter(model == mod, abs(margin - m) < 1e-9)
+  x$profit[x$policy == "nb"] - x$profit[x$policy == "point"]
+}
+pol_val <- function(m, pol, mod = "Ensemble") nv_prof$profit[nv_prof$model == mod & nv_prof$policy == pol & abs(nv_prof$margin - m) < 1e-9]
+model_spread <- nv_prof |> filter(policy == "nb") |> group_by(margin) |> summarise(r = max(profit) - min(profit)) |> pull(r) |> max()
 tm_metrics <- rd("teammate_metrics_summary.csv")
 tm_event   <- rd("teammate_holiday_error.csv")
 tm_inv     <- rd("teammate_inventory_backtest.csv")
@@ -113,7 +120,7 @@ item_rank <- claude |> filter(level == "item x store") |> arrange(WRMSSE)
 - **The ranking depends on the level.** LightGBM's lead is at store and department levels; for a single item in one store the models are close, with no model best on more than `r pct(max(best$share))` of items. Close is not the same as statistically tied: we did not test these item-level gaps formally.
 - **Chronos's advantage is speed, not accuracy here.** It needs no training and forecasts every series in `r fmt_time(secs("Chronos"))`, against `r fmt_time(secs("LightGBM"))` for LightGBM, `r fmt_time(secs("AutoETS"))` for AutoETS and `r fmt_time(secs("AutoARIMA"))` for AutoARIMA.
 - **Claude matched, but did not beat, the best traditional approach.** On the 12 store × department totals it scored `r f3(cl("Claude (named)", "store x dept"))` (named) and `r f3(cl("Claude (blind)", "store x dept"))` (blind), level with the ensemble (`r f3(cl("Ensemble (sum of items)", "store x dept"))`) and ahead of every single model; on 100 sampled items it trailed AutoETS (`r f3(cl("Claude (blind)", "item x store"))` vs `r f3(item_rank$WRMSSE[1])`). Hiding names and dates did not change its accuracy, but this cannot fully rule out that it has seen the public data.
-- **Business insight.** The best order quantity is not the forecast: it is a quantile of the demand distribution set by the item's margin (the newsvendor problem). In an exploratory test, the more accurate model earned significantly more only at high margins, so models should be chosen on the decision they support, not on accuracy alone.
+- **Business insight.** The best order quantity is not the forecast: it is a quantile of the demand distribution set by the item's margin (the newsvendor problem). Turning forecasts into orders, ordering that quantile instead of the forecast was worth up to \$`r round(pol_gap(0.2) / 1000)`k over 28 days, far more than the choice of model; the more accurate model earned significantly more only at high margins.
 
 **Answer: not yet on accuracy, yes on speed.** Traditional methods still lead on accuracy: LightGBM is the best single model, AutoETS is close, and their simple average is best overall. Chronos offers a large speed advantage; Claude matches the best traditional approach on totals but with too little evidence to recommend; and replenishment decisions depend on costs and uncertainty, not on forecast accuracy alone.
 
@@ -365,7 +372,26 @@ the $m$-th quantile of the demand distribution $F$. A 20%-margin item should be 
 
 This is where Chronos's output is useful. Point-forecast models (AutoETS, LightGBM, the ensemble) need an assumed distribution around their forecast to give a P80. Chronos forecasts the quantiles directly, so the order can be read straight off its output for margins between 10% and 90%. Its upper quantiles were well calibrated in the test window: actual sales were at or below its 80th percentile on `r cov(0.8)` of item-days and at or below its 90th on `r cov(0.9)`. The lower quantiles look over-covered (`r cov(0.1)` at the 10th percentile) mainly because many items sold zero and Chronos forecast near zero, which counts as covered. So a model that is weaker on point accuracy can still be useful for ordering, which is why the metric should match the decision.
 
-As an exploratory extension, we turned each model's forecasts into such orders, using a negative binomial distribution around the forecast (Chronos used its own quantiles), and simulated 28 days of profit at margins from 20% to 80%. To check whether profit gaps were real, we resampled the items 2,000 times.
+To test this, we turned each model's forecasts into daily orders for every item over the 28 test days and scored them against actual sales, under two rules: **order the point forecast**, or **order the margin quantile** of a negative binomial distribution centred on the forecast. Margins run from 20% to 80%.
+
+```{r fig-nv-policy}
+#| fig-cap: "Profit over 28 days for all items when the AutoETS + LightGBM ensemble's forecasts become orders: ordering the forecast itself against ordering the margin-matched quantile. The other models' lines lie close to these."
+#| fig-height: 3.2
+nv_prof |>
+  filter(model == "Ensemble") |>
+  mutate(policy = recode(policy, point = "Order the forecast", nb = "Order the margin quantile")) |>
+  ggplot(aes(margin, profit / 1000, colour = policy)) +
+  geom_hline(yintercept = 0, colour = "grey60") +
+  geom_line(linewidth = 1) + geom_point(size = 2.2) +
+  scale_colour_manual(values = c(`Order the forecast` = "#9A9993", `Order the margin quantile` = "#0F5C73")) +
+  scale_x_continuous(labels = percent, breaks = unique(nv_prof$margin)) +
+  labs(title = "Ordering the margin quantile beats ordering the forecast, most at low margins",
+       x = "Gross margin", y = "Profit over 28 days ($ thousands)", colour = NULL)
+```
+
+The ordering rule matters far more than the model (@fig-nv-policy). At a 20% margin, ordering the ensemble's forecast loses \$`r round(-pol_val(0.2, "point") / 1000)`k over 28 days, because every unsold unit wastes 80% of its price; ordering the 20th percentile instead roughly breaks even. At an 80% margin, the quantile rule earns \$`r round(pol_gap(0.8) / 1000)`k more by stocking deeper. The two rules nearly coincide around a 65% margin, where the forecast happens to sit close to the matching quantile. By comparison, under the quantile rule the four models never differ by more than \$`r round(model_spread / 1000)`k at any margin.
+
+Did the more accurate model also earn more? To check whether profit gaps between models were real, we resampled the items 2,000 times (@fig-nv; Chronos used its own quantiles).
 
 ```{r fig-nv}
 #| fig-cap: "Profit difference against LightGBM over 28 days, with 95% bootstrap intervals over items. Intervals crossing zero mean no significant difference."
@@ -379,9 +405,10 @@ nv_boot |>
        x = "Gross margin", y = "Profit minus LightGBM ($ thousands)", colour = NULL)
 ```
 
-1. **More accuracy did not reliably mean more profit.** At typical margins (35–65%), profit differences between models were within chance. Only at an 80% margin, where stock-outs are costly, did LightGBM earn significantly more.
-2. **Accuracy is measured where orders are not placed.** LightGBM's accuracy lead is at aggregate levels, but stores order item by item, where the models are close. Models should be chosen on the metric that matches the decision.
-3. **Profit expectations should come from backtests.** Both models over-predicted their own profit (at a 50% margin, LightGBM predicted \$`r round(nv_pred$predicted[nv_pred$margin == 0.5 & nv_pred$model == "LightGBM"] / 1000)`k and earned \$`r round(nv_pred$actual[nv_pred$margin == 0.5 & nv_pred$model == "LightGBM"] / 1000)`k), because the simulation treats each forecast as the true average.
+1. **The ordering rule matters more than the model.** Ordering the margin quantile instead of the forecast is worth up to \$`r round(pol_gap(0.2) / 1000)`k over 28 days; the choice of model, at most \$`r round(model_spread / 1000)`k.
+2. **More accuracy did not reliably mean more profit.** At typical margins (35–65%), profit differences between models were within chance. Only at an 80% margin, where stock-outs are costly, did LightGBM earn significantly more.
+3. **Accuracy is measured where orders are not placed.** LightGBM's accuracy lead is at aggregate levels, but stores order item by item, where the models are close. Models should be chosen on the metric that matches the decision.
+4. **Profit expectations should come from backtests.** Both models over-predicted their own profit (at a 50% margin, LightGBM predicted \$`r round(nv_pred$predicted[nv_pred$margin == 0.5 & nv_pred$model == "LightGBM"] / 1000)`k and earned \$`r round(nv_pred$actual[nv_pred$margin == 0.5 & nv_pred$model == "LightGBM"] / 1000)`k), because the simulation treats each forecast as the true average.
 
 # Interactive dashboard: Shelf Signal
 
@@ -454,7 +481,7 @@ The inventory backtest complements our newsvendor analysis. With no safety stock
 2. **Rankings depend on the level and the window.** The models differ most at store and department level, are close for single items, and close rankings can flip between test windows.
 3. **Chronos offers a large speed advantage**: no training and `r fmt_time(secs("Chronos"))` for all series, but weaker overall accuracy in this study.
 4. **Claude matched the best traditional approach on totals, on limited evidence.** It was level with the ensemble on the 12 totals and behind AutoETS on items, was tested on 112 series only, and contamination cannot be ruled out.
-5. **Replenishment depends on costs and uncertainty.** The best order is a margin-dependent quantile of demand; the margin or service level moved decisions more than the choice of model.
+5. **Replenishment depends on costs and uncertainty.** The best order is a margin-dependent quantile of demand: ordering that quantile instead of the forecast was worth far more than switching models.
 
 **Practical recommendation:** for item-level forecasts, average a statistical model (AutoETS) with LightGBM; use Chronos where speed or the lack of training data matters; fit store and department totals directly; and choose models on the metric that matches the decision they support.
 

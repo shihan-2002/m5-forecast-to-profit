@@ -64,6 +64,8 @@ nv_pred   <- rd("newsvendor_predicted_vs_actual.csv")
 tm_metrics <- rd("teammate_metrics_summary.csv")
 tm_event   <- rd("teammate_holiday_error.csv")
 tm_inv     <- rd("teammate_inventory_backtest.csv")
+ch_vol     <- rd("chronos_bias_by_volume.csv")
+ch_cal     <- rd("chronos_calibration.csv")
 
 # One fixed colour per model, the same in every chart
 pal <- c(AutoARIMA = "#1BAF7A", AutoETS = "#D55181", LightGBM = "#2A78D6", Chronos = "#EB6834", Ensemble = "#0F5C73",
@@ -79,6 +81,8 @@ w <- function(m) acc$WRMSSE[acc$model == m]
 f3 <- function(x) sprintf("%.3f", x)
 pct <- function(x, d = 0) percent(x, accuracy = 10^-d)
 mape <- function(m) mean(abs(test_tot[[m]] - test_tot$y) / test_tot$y)
+bias <- function(m) sum(test_tot[[m]]) / sum(test_tot$y) - 1
+cov <- function(q) pct(ch_cal$coverage[abs(ch_cal$quantile - q) < 1e-9])
 cl <- function(m, lvl) claude$WRMSSE[claude$model == m & claude$level == lvl]
 secs <- function(m) timing$wall_seconds[timing$model == m]
 fmt_time <- function(s) if (s < 120) paste(round(s), "s") else paste(round(s / 60), "min")
@@ -98,7 +102,7 @@ item_rank <- claude |> filter(level == "item x store") |> arrange(WRMSSE)
 
 # Executive summary
 
-**Question.** Can modern AI foundation models produce more accurate and computationally efficient retail demand forecasts than traditional statistical and machine-learning methods? And does a better forecast mean a better replenishment decision?
+**Question.** Can modern AI foundation models produce more accurate and computationally efficient retail demand forecasts than traditional statistical and machine-learning methods?
 
 **What we did.** We forecast 28 days of daily unit sales for all 1,437 food items in Walmart's four California stores (`r comma(facts$n_series)` item-store series, M5 data). Four main models were compared against a seasonal-naive benchmark: two classical time series models (**AutoETS** and **AutoARIMA**), the machine-learning method that dominated the M5 competition (**LightGBM**), and an AI foundation model for time series (Amazon's **Chronos**). We also tested a simple **ensemble**, the unweighted average of AutoETS and LightGBM. As an experiment, a general-purpose large language model (**Claude**) forecast a subset of series. No model saw the 28 test days while fitting.
 
@@ -109,7 +113,7 @@ item_rank <- claude |> filter(level == "item x store") |> arrange(WRMSSE)
 - **The ranking depends on the level.** LightGBM's lead is at store and department levels; for a single item in one store the models are close, with no model best on more than `r pct(max(best$share))` of items. Close is not the same as statistically tied: we did not test these item-level gaps formally.
 - **Chronos's advantage is speed, not accuracy here.** It needs no training and forecasts every series in `r fmt_time(secs("Chronos"))`, against `r fmt_time(secs("LightGBM"))` for LightGBM, `r fmt_time(secs("AutoETS"))` for AutoETS and `r fmt_time(secs("AutoARIMA"))` for AutoARIMA.
 - **Claude matched, but did not beat, the best traditional approach.** On the 12 store × department totals it scored `r f3(cl("Claude (named)", "store x dept"))` (named) and `r f3(cl("Claude (blind)", "store x dept"))` (blind), level with the ensemble (`r f3(cl("Ensemble (sum of items)", "store x dept"))`) and ahead of every single model; on 100 sampled items it trailed AutoETS (`r f3(cl("Claude (blind)", "item x store"))` vs `r f3(item_rank$WRMSSE[1])`). Hiding names and dates did not change its accuracy, but this cannot fully rule out that it has seen the public data.
-- **Business insight.** The best order quantity is not the forecast: it is a quantile of the demand distribution set by the item's margin (the newsvendor problem). When forecasts were turned into orders, the more accurate model earned significantly more only at high margins.
+- **Business insight.** The best order quantity is not the forecast: it is a quantile of the demand distribution set by the item's margin (the newsvendor problem). In an exploratory test, the more accurate model earned significantly more only at high margins, so models should be chosen on the decision they support, not on accuracy alone.
 
 **Answer: not yet on accuracy, yes on speed.** Traditional methods still lead on accuracy: LightGBM is the best single model, AutoETS is close, and their simple average is best overall. Chronos offers a large speed advantage; Claude matches the best traditional approach on totals but with too little evidence to recommend; and replenishment decisions depend on costs and uncertainty, not on forecast accuracy alone.
 
@@ -119,7 +123,7 @@ Retail forecasting has to balance three things: accuracy, efficiency, and busine
 
 Since then, two kinds of AI model have appeared that forecast without being trained on a retailer's data. **Time series foundation models**, such as Amazon's Chronos [@ansari2024], are pre-trained on millions of series and forecast new ones "zero-shot". **General-purpose large language models**, such as Claude, can read a sales history as text and reason their way to a forecast. If either can match LightGBM, a retailer could skip model training entirely.
 
-We ask: **can modern AI foundation models produce more accurate and computationally efficient retail demand forecasts than traditional statistical and machine-learning methods?** And, because a forecast is only useful through the decisions it drives: **does a better forecast lead to a better replenishment decision?**
+We ask: **can modern AI foundation models produce more accurate and computationally efficient retail demand forecasts than traditional statistical and machine-learning methods?** Because a forecast is only useful through the decisions it drives, we close with a business insight on ordering (the newsvendor problem) and what it means for choosing a model.
 
 # Data
 
@@ -171,17 +175,21 @@ weekday |>
 | Seasonal naive | Benchmark | No | Last week | Repeats the same weekday from last week |
 | Claude Opus 5.5 (experiment) | General-purpose large language model | No (zero-shot) | Last 365 days as text, with weekday, holiday, SNAP, price | Reads the numbers and reasons about them; no statistical model is fitted |
 
-The models do not see the same inputs: AutoETS, AutoARIMA and Chronos use only the series' own history, while LightGBM and Claude also see prices and the calendar. The Chronos paper lists M5 among its held-out evaluation sets, so Chronos never trained on this data [@ansari2024].
+**Why these models.** Each one stands for an approach a retailer could realistically use. AutoETS and AutoARIMA are the classical models covered in the course, fitted automatically so that no series needs hand-tuning. LightGBM is the machine-learning method that dominated the M5 competition, so it is the benchmark an AI model has to beat. Chronos-Bolt is a widely used, open time series foundation model that runs on a laptop; we chose the small version for speed. Claude represents general-purpose LLMs, the "ask ChatGPT or Claude" route. The ensemble tests the classic finding that combining a statistical and a machine-learning forecast helps, and seasonal naive is the floor every model must clear.
+
+**What information each model had.** The models do not see the same inputs: AutoETS, AutoARIMA and Chronos use only the series' own history, while LightGBM and Claude also see prices and the calendar. None of them sees the test window. The Chronos paper keeps M5, and every retail dataset it uses, out of training as held-out test sets, so Chronos never trained on this data [@ansari2024].
+
+**How the AI forecasts were produced.** *Chronos* reads the last 512 days of each series and returns nine quantiles (10th to 90th percentile) for each of the next 28 days; nothing is fitted. Its built-in point forecast is the median, which sits below the mean for sparse, right-skewed sales, so we use the average of the nine quantiles as its point forecast. *Claude* receives each series as text, one row per day, with an instruction to return 28 daily forecasts in a fixed JSON format with a short explanation; the code checks every reply and retries on a malformed one (details in @sec-claude).
 
 ## Validation design
 
 - **Out-of-sample test.** Every model is trained on data up to 2016-05-22 and forecasts the same 28 days. LightGBM's number of trees was tuned by early stopping on the last 28 *training* days, so the test window was never used for fitting or tuning.
 - **Level of forecasting.** All main models forecast each of the 5,748 item × store series. Store, department and total forecasts are the sums of those item forecasts (bottom-up).
 - **Accuracy metric.** The main metric is **WRMSSE**, the official M5 score: each series' root mean squared error is scaled by its in-sample naive one-step error and weighted by its dollar sales in the last 28 training days. Values below 1 beat a naive forecast. WRMSSE is averaged over six levels (total, store, department, store × department, item, item × store). We also report MAE, RMSE, the daily error (MAPE) of summed totals, and bias.
-- **Claude subset.** Claude is called once per series through an API, so forecasting all 5,748 series would cost about \$`r round(claude_full_cost)` and take hours. It therefore forecast a subset of 112 series: 100 items sampled at random (fixed seed) from items with sales in the last 90 days, and the 12 store × department totals. Every other model is scored on exactly the same subset.
+- **Claude subset.** Claude is called once per series through an API, so forecasting all 5,748 series would cost about \$`r round(claude_full_cost)` and take hours. It therefore forecast a subset of 112 series: 100 items sampled at random (fixed seed) from items with sales in the last 90 days, and the 12 store × department totals (4 stores × 3 food departments, FOODS_1 to FOODS_3; each total is the daily sum of every item in that department and store). Every other model is scored on exactly the same subset.
 - **Direct vs summed totals.** Claude forecasts each total directly. For a fair comparison, AutoETS, AutoARIMA, Chronos and seasonal naive were also fitted directly on the 12 totals. LightGBM needs many series to train, so its totals remain sums of item forecasts.
 - **Memorisation check.** Each Claude forecast was run twice: *named* (real dates, Walmart, item and store IDs, holiday names) and *blind* (no names or dates, only "day −364 … +28", weekday and a generic holiday flag).
-- **Efficiency.** Each model's full fit and forecast for all 5,748 series was timed one at a time on the same laptop (10 CPU cores, Apple GPU).
+- **Efficiency.** Each model was timed from prepared data to finished forecasts for all 5,748 series, including any training, one model at a time on the same laptop (10 CPU cores, Apple GPU). Data preparation and scoring, which are the same for every model, are excluded.
 - **One test window.** All results come from a single 28-day window; see the limitations.
 
 # Results
@@ -213,7 +221,7 @@ acc |>
   labs(title = "Averaging AutoETS and LightGBM beats every single model", x = "WRMSSE", y = NULL)
 ```
 
-Among single models, LightGBM has the lowest WRMSSE and RMSE, with AutoETS close behind; both beat the benchmark. Their unweighted average is better than either (`r f3(w("Ensemble"))`), echoing the M5 finding that combinations of forecasts are hard to beat [@makridakis2022]. The two models make different kinds of errors, so averaging cancels part of them. Chronos has the lowest MAE of the single models but the weakest WRMSSE: MAE rewards getting the typical day right, while WRMSSE punishes errors that add up across items.
+Among single models, LightGBM has the lowest WRMSSE and RMSE, with AutoETS close behind; both beat the benchmark. Their unweighted average is better than either (`r f3(w("Ensemble"))`), echoing the M5 finding that combinations of forecasts are hard to beat [@makridakis2022]. The two models make different kinds of errors, so averaging cancels part of them: summed over all items, LightGBM runs `r pct(abs(bias("LightGBM")), 1)` low and AutoETS `r pct(bias("AutoETS"), 1)` high over the test window, and their average is within `r pct(abs(bias("Ensemble")), 1)` of actual sales. Chronos has the lowest MAE of the single models but the weakest WRMSSE: MAE rewards getting the typical day right, while WRMSSE punishes errors that add up across items.
 
 ```{r fig-test}
 #| fig-cap: "Total daily units across all items in the test window: actual (black) against each model's summed item forecasts."
@@ -251,7 +259,15 @@ by_level |>
        x = NULL, y = "RMSSE", colour = NULL)
 ```
 
-The models differ most at the levels retailers plan with: store, department and total. AutoARIMA and Chronos produce nearly flat forecasts for items selling 0–2 units a day; summed over 5,748 items, those flat forecasts miss the weekly peaks (@fig-test). Summed to the four-store total, the daily error is `r pct(mape("LightGBM"), 1)` for LightGBM and `r pct(mape("AutoETS"), 1)` for AutoETS, against `r pct(mape("AutoARIMA"), 1)` for AutoARIMA and `r pct(mape("Chronos"), 1)` for Chronos, which also forecasts about 11% too low in total.
+The models differ most at the levels retailers plan with: store, department and total. Summed to the four-store total, the daily error is `r pct(mape("LightGBM"), 1)` for LightGBM and `r pct(mape("AutoETS"), 1)` for AutoETS, against `r pct(mape("AutoARIMA"), 1)` for AutoARIMA and `r pct(mape("Chronos"), 1)` for Chronos (@fig-test). The two weaker models fail in different ways. AutoARIMA produces nearly flat forecasts for items selling 0–2 units a day, and thousands of flat lines add up to a total that misses the weekly peaks. Chronos does follow each item's weekly pattern, so its total has the right shape, but it runs `r pct(abs(bias("Chronos")))` low. The shortfall is not a trend effect: it grows with sparsity (@tbl-chronos-vol). For an item that sells nothing on most days, the lower quantiles are near zero and the rare busy days lie above the 90th percentile, so the average of the nine quantiles misses them.
+
+```{r tbl-chronos-vol}
+#| tbl-cap: "Chronos's total forecast against actual sales over the test window, with items split into quarters by their sales in the last 56 training days."
+ch_vol |>
+  transmute(`Items` = group, `Actual units` = comma(y), `Chronos forecast` = comma(round(Chronos)),
+            `Chronos vs actual` = pct(gap)) |>
+  kable(align = "lrrr")
+```
 
 ```{r fig-item}
 #| fig-cap: "Mean RMSSE per item-store series, grouped by how often the item sells zero."
@@ -269,7 +285,7 @@ by_zero |>
 
 For one item in one store, the models are close: among the four single models, each is the most accurate on part of the items (LightGBM `r share("LightGBM")`, Chronos `r share("Chronos")`, AutoETS `r share("AutoETS")`, AutoARIMA `r share("AutoARIMA")`), and all beat the benchmark by a similar margin. Daily sales of a single item are mostly noise. "Close" here is descriptive; we did not run a formal test of equal accuracy.
 
-## Claude: a general-purpose LLM as a forecaster
+## Claude: a general-purpose LLM as a forecaster {#sec-claude}
 
 Claude received each series' last 365 days as text (date, weekday, holiday, SNAP day, price, units) and returned 28 daily forecasts in a fixed JSON format, together with a short explanation of its reasoning. It cost \$`r sprintf("%.2f", claude_cost)` for `r claude_n` forecasts.
 
@@ -347,6 +363,8 @@ $$
 
 the $m$-th quantile of the demand distribution $F$. A 20%-margin item should be ordered at the 20th percentile of demand (P20), and an 80%-margin item at the 80th percentile (P80). **The optimal order is generally not the point forecast**: it requires a forecast of the whole demand distribution, not just its average.
 
+This is where Chronos's output is useful. Point-forecast models (AutoETS, LightGBM, the ensemble) need an assumed distribution around their forecast to give a P80. Chronos forecasts the quantiles directly, so the order can be read straight off its output for margins between 10% and 90%. Its upper quantiles were well calibrated in the test window: actual sales were at or below its 80th percentile on `r cov(0.8)` of item-days and at or below its 90th on `r cov(0.9)`. The lower quantiles look over-covered (`r cov(0.1)` at the 10th percentile) mainly because many items sold zero and Chronos forecast near zero, which counts as covered. So a model that is weaker on point accuracy can still be useful for ordering, which is why the metric should match the decision.
+
 As an exploratory extension, we turned each model's forecasts into such orders, using a negative binomial distribution around the forecast (Chronos used its own quantiles), and simulated 28 days of profit at margins from 20% to 80%. To check whether profit gaps were real, we resampled the items 2,000 times.
 
 ```{r fig-nv}
@@ -365,9 +383,9 @@ nv_boot |>
 2. **Accuracy is measured where orders are not placed.** LightGBM's accuracy lead is at aggregate levels, but stores order item by item, where the models are close. Models should be chosen on the metric that matches the decision.
 3. **Profit expectations should come from backtests.** Both models over-predicted their own profit (at a 50% margin, LightGBM predicted \$`r round(nv_pred$predicted[nv_pred$margin == 0.5 & nv_pred$model == "LightGBM"] / 1000)`k and earned \$`r round(nv_pred$actual[nv_pred$margin == 0.5 & nv_pred$model == "LightGBM"] / 1000)`k), because the simulation treats each forecast as the true average.
 
-# Interactive dashboard: Shelf Signal v2
+# Interactive dashboard: Shelf Signal
 
-We built **Shelf Signal v2**, an interactive version of this analysis, by extending our teammate's original Shelf Signal dashboard (<https://jing0712.github.io/shelf-signal/>; code at <https://github.com/Jing0712/shelf-signal>) with this project's models and results. It is live at <https://shihan-2002.github.io/shelf-signal-dashboard/> and is a single self-contained web page (`docs/index.html` in the project repository) with seven tabs:
+We built **Shelf Signal**, an interactive version of this analysis, by extending our teammate's original Shelf Signal dashboard (<https://jing0712.github.io/shelf-signal/>; code at <https://github.com/Jing0712/shelf-signal>) with this project's models and results. It is live at <https://shihan-2002.github.io/shelf-signal-dashboard/> and is a single self-contained web page (`docs/index.html` in the project repository) with seven tabs:
 
 | Tab | What it shows | Report section |
 |---|---|---|
@@ -380,6 +398,14 @@ We built **Shelf Signal v2**, an interactive version of this analysis, by extend
 | About | Method, limitations and credits | 9 |
 
 It covers 134 series: every aggregate level, Claude's 100 sampled items, and the 15 store-CA_1 items from the original Shelf Signal. Forecasts are precomputed by our pipeline; only the order quantities are calculated in the browser, and actual sales are used only to score results afterwards.
+
+**How to use it.**
+
+1. Open the link in any browser; nothing needs to be installed. The page also works offline from `docs/index.html`.
+2. **Forecast explorer:** choose a level (for example *Store x dept*) and a series, then switch models on and off to compare them with actual sales.
+3. **AI lab:** compare Chronos and Claude, see the named-vs-blind scatter, and open *Read Claude's reasoning* for any series.
+4. **Order planner:** choose an item, a model and a margin; move the margin slider to see the order move along the demand distribution and how each model's orders would have done over the 28 test days.
+5. **Ask the analyst:** click a question for a short answer drawn from the results.
 
 ## Evidence from the original Shelf Signal
 
@@ -420,7 +446,7 @@ tm_inv |>
 
 The inventory backtest complements our newsvendor analysis. With no safety stock ($z = 0$), the forecasts lose very different amounts of demand (from `r min(tm_inv |> filter(z == 0) |> group_by(model) |> summarise(l = sum(lost_units)) |> pull(l))` to `r max(tm_inv |> filter(z == 0) |> group_by(model) |> summarise(l = sum(lost_units)) |> pull(l))` units); with enough safety stock, lost sales disappear for every model and the difference becomes how much stock each needs to hold. As in the newsvendor analysis, the choice of service level or margin moves the decision more than the choice of model. Shelf Signal notes that observed sales stand in for demand, so this is an illustration of the trade-off, not a cost estimate.
 
-![Shelf Signal v2, Order planner tab: the demand distribution for one item-day with the margin-matched order (blue) and actual sales (amber), orders against actual sales over the 28 test days, and profit by model.](dashboard.png){width=100%}
+![Shelf Signal, Order planner tab: the demand distribution for one item-day with the margin-matched order (blue) and actual sales (amber), orders against actual sales over the 28 test days, and profit by model.](dashboard.png){width=100%}
 
 # Conclusions
 
@@ -443,9 +469,9 @@ The inventory backtest complements our newsvendor analysis. With no safety stock
 
 # Use of AI tools and reproducibility
 
-AI appears in two roles. **As forecasting models under test:** Chronos-Bolt (small) for all 5,748 series and Claude Opus 5.5 for 112 series (API cost \$`r sprintf("%.2f", claude_cost)`; every prompt and response is saved in `outputs/claude_raw/`). **As a coding assistant:** we used Claude Code to write the data pipeline, evaluation code and charts, and to draft this report. We reviewed its output and corrected several first-pass choices (LightGBM overfitting on the item ID, Chronos's median being used as its mean, and an unfair comparison of summed and direct totals). Every number in this report is read from the pipeline's output files.
+AI appears in two roles. **As forecasting models under test:** Chronos-Bolt (small) for all 5,748 series and Claude Opus 5.5 for 112 series (API cost \$`r sprintf("%.2f", claude_cost)`; every prompt and response is saved in `outputs/claude_raw/`). **As a coding assistant:** we used Claude Code to write the data pipeline, evaluation code and charts, to build the dashboard and slides, and to draft this report. We reviewed its output and corrected several first-pass choices (LightGBM overfitting on the item ID, Chronos's median being used as its mean, and an unfair comparison of summed and direct totals). Every number in this report is read from the pipeline's output files.
 
-The forecasting pipeline is written in Python (`src/`); this report is written in R and reads its CSV outputs (`outputs/results/report/`). The README in the project repository lists the steps to reproduce everything.
+The forecasting pipeline is written in Python (`src/`); this report is written in R and reads its CSV outputs (`outputs/results/report/`). All code, results and the dashboard source are at <https://github.com/shihan-2002/m5-forecast-to-profit>, whose README lists the steps to reproduce everything.
 
 # References {.unnumbered}
 

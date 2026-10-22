@@ -205,10 +205,11 @@ async function main() {
     s.addTable([hdr, ...body], { x: 0.6, y: 1.5, w: 12.1, colW: [3.4, 1.85, 1.85, 1.75, 1.65, 1.6], fontSize: 15, color: HEX.ink,
       border: { type: "solid", pt: 0.75, color: HEX.line }, rowH: [0.75, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55], valign: "middle", margin: 0.08, objectName: "scorecard table" });
     text(s, "Green = best in its column (benchmark excluded)", { x: 0.6, y: 5.5, w: 12.1, h: 0.3, fontSize: 11, color: HEX.grey, align: "right" });
-    card(s, 0.6, 6.0, 12.1, 0.8, "scorecard summary");
-    text(s, [{ text: "Best traditional choice: ", options: { bold: true, color: HEX.ens } }, { text: "the AutoETS + LightGBM average, for accuracy.   " },
+    card(s, 0.6, 5.85, 12.1, 1.05, "scorecard summary");
+    text(s, [{ text: "How to read: ", options: { bold: true, color: HEX.ink } }, { text: "RMSSE = error vs a naive \u201csame as yesterday\u201d forecast; WRMSSE = RMSSE weighted by dollar sales. Smaller is better.", options: { breakLine: true } },
+             { text: "Best traditional choice: ", options: { bold: true, color: HEX.ens } }, { text: "the AutoETS + LightGBM average, for accuracy.   " },
              { text: "Best AI strength: ", options: { bold: true, color: HEX.chronos } }, { text: "Chronos, for speed with no training." }],
-         { x: 0.9, y: 6.0, w: 11.6, h: 0.8, fontSize: 14, color: C.text1, valign: "middle" });
+         { x: 0.9, y: 5.85, w: 11.6, h: 1.05, fontSize: 14, color: C.text1, valign: "middle", paraSpaceAfter: 4 });
   }
   s.addNotes("SPEAKER 2 (1:00)\n\nHere is the comparison: traditional models against AI, on four questions. A quick guide first. RMSSE compares a model's errors with a naive \"same as yesterday\" forecast for the same product, and WRMSSE combines that score across all products, weighted by dollar sales. The store-totals column is the average daily percentage error. In every accuracy column, smaller is better. So, who is most accurate overall? A traditional model: the simple average of AutoETS and LightGBM, with LightGBM alone in second. Who forecasts store totals best? Again, the traditional models. For single products, it's close, and the AI is level with LightGBM. And who is fastest? The AI, Chronos, by far: seconds instead of minutes, with no training at all.\n\nSo from a traditional point of view, the best choice is the AutoETS-plus-LightGBM average, and the AI's real strength is speed. The green cells show the winner of each column.\n\nPOINT AT: the green cells, column by column.\n\nTRANSITION: Let's see what those forecasts actually look like.");
 

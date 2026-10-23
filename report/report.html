@@ -3185,7 +3185,7 @@ Figure 10: Shelf Signal inventory backtest (15 items, store CA_1, 28 days): rai
 <li><strong>Item-level gaps not formally tested.</strong> “Close” at item level is descriptive.</li>
 <li><strong>Simple LightGBM.</strong> One fixed setting; M5 winners tuned and ensembled many models.</li>
 <li><strong>Sales are not demand.</strong> A stocked-out shelf records zero sales, so demand is understated for every model.</li>
-<li><strong>Newsvendor analysis is exploratory.</strong> It assumed perishable stock, zero salvage value and, for every model except Chronos, a negative binomial demand distribution centred on the model’s forecast, with each item’s spread (variance-to-mean ratio) taken from its last 180 training days; using each model’s own uncertainty (prediction intervals, quantile regression) would make it a fuller test.</li>
+<li><strong>Newsvendor analysis is exploratory.</strong> It assumed perishable stock, zero salvage value and, for every model except Chronos, a negative binomial demand distribution centred on the model’s forecast, with each item’s spread (variance-to-mean ratio) taken from its last 180 training days; using each model’s own uncertainty (prediction intervals, quantile regression) would make it a fuller test. A promising next step is a hybrid: the ensemble’s forecast for the level and Chronos’s quantiles for the spread, scored by profit and pinball loss at each margin.</li>
 </ul>
 </section>
 <section id="use-of-ai-tools-and-reproducibility" class="level1">

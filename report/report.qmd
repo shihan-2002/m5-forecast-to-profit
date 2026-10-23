@@ -35,6 +35,9 @@ format:
         \usepackage{sectsty}
         \allsectionsfont{\normalsize\bfseries\rmfamily}
 bibliography: references.bib
+knitr:
+  opts_chunk:
+    fig.align: center
 execute:
   echo: false
   warning: false
@@ -473,7 +476,7 @@ tm_inv |>
 
 The inventory backtest complements our newsvendor analysis. With no safety stock ($z = 0$), the forecasts lose very different amounts of demand (from `r min(tm_inv |> filter(z == 0) |> group_by(model) |> summarise(l = sum(lost_units)) |> pull(l))` to `r max(tm_inv |> filter(z == 0) |> group_by(model) |> summarise(l = sum(lost_units)) |> pull(l))` units); with enough safety stock, lost sales disappear for every model and the difference becomes how much stock each needs to hold. As in the newsvendor analysis, the choice of service level or margin moves the decision more than the choice of model. Shelf Signal notes that observed sales stand in for demand, so this is an illustration of the trade-off, not a cost estimate.
 
-![Shelf Signal, Order planner tab: the demand distribution for one item-day with the margin-matched order (orange) and actual sales (black), orders against actual sales over the 28 test days, and profit by model.](dashboard.png){width=100%}
+![Shelf Signal, Order planner tab: the demand distribution for one item-day with the margin-matched order (orange) and actual sales (black), orders against actual sales over the 28 test days, and profit by model.](dashboard.png){width=100% fig-align="center"}
 
 # Conclusions
 

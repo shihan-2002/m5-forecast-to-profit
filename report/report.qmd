@@ -27,7 +27,7 @@ format:
     fig-width: 7
     fig-height: 3.6
     colorlinks: true
-    linestretch: 1.5
+    linestretch: 1.15
     hyperrefoptions:
       - linktoc=all
     template-partials:
@@ -108,6 +108,8 @@ claude_full_cost <- claude_cost / claude_n * 5748
 tot_rank <- claude |> filter(level == "store x dept", !str_detect(model, "Claude")) |> arrange(WRMSSE)
 item_rank <- claude |> filter(level == "item x store") |> arrange(WRMSSE)
 ```
+
+{{< pagebreak >}}
 
 # Executive summary
 

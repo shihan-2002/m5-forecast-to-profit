@@ -34,6 +34,7 @@ format:
       text: |
         \usepackage{sectsty}
         \allsectionsfont{\normalsize\bfseries\rmfamily}
+        \usepackage[justification=centering,singlelinecheck=false]{caption}
 bibliography: references.bib
 knitr:
   opts_chunk:

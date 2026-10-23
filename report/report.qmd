@@ -137,7 +137,7 @@ We ask: **can modern AI foundation models produce more accurate and computationa
 We use the M5 data [@kaggle_m5] for the food category of Walmart's four California stores: `r comma(facts$n_series)` daily item-store series, with weekly prices, holidays and events, and SNAP (food-stamp) payment days.
 
 | | |
-|---|---|
+|:---:|:---:|
 | Stores and items | CA_1 to CA_4; 1,437 food items in 3 departments |
 | Unit of forecasting | One item in one store (item × store), 5,748 series |
 | Training period | 2011-01-29 to 2016-05-22 (1,941 days) |
@@ -173,7 +173,7 @@ weekday |>
 ## Models
 
 | Model | Family | Trained on our data? | Inputs | How it forecasts |
-|---|---|---|---|---|
+|:---:|:---:|:---:|:---:|:---:|
 | AutoETS | Classical statistics | Yes, one model per series | Last 730 days of that series | Exponential smoothing with a 7-day season; error, trend and season form chosen automatically by AIC |
 | AutoARIMA | Classical statistics | Yes, one model per series | Last 730 days of that series | Seasonal ARIMA with a 7-day cycle; orders chosen automatically by AIC |
 | LightGBM | Machine learning | Yes, one global model | All series, plus price, weekday, month, holidays, SNAP | Gradient-boosted trees on sales lags of 28+ days and rolling means; Tweedie loss |
@@ -210,7 +210,7 @@ acc |>
   arrange(WRMSSE) |>
   transmute(Model = lab[model], WRMSSE = f3(WRMSSE), `MAE (units)` = f3(MAE), `RMSE (units)` = f3(RMSE),
             `Daily error of total` = map_chr(model, ~ pct(mape(.x), 1))) |>
-  kable(align = "lrrrr")
+  kable(align = "c")
 ```
 
 ```{r fig-wrmsse}
@@ -273,7 +273,7 @@ The models differ most at the levels retailers plan with: store, department and 
 ch_vol |>
   transmute(`Items` = group, `Actual units` = comma(y), `Chronos forecast` = comma(round(Chronos)),
             `Chronos vs actual` = pct(gap)) |>
-  kable(align = "lrrr")
+  kable(align = "c")
 ```
 
 ```{r fig-item}
@@ -317,7 +317,7 @@ claude |>
 item_rank |>
   mutate(model = recode(model, SeasonalNaive = "Seasonal naive")) |>
   transmute(Model = model, WRMSSE = f3(WRMSSE), `MAE (units)` = f3(MAE)) |>
-  kable(align = "lrr")
+  kable(align = "c")
 ```
 
 On the 12 totals, Claude (`r f3(cl("Claude (named)", "store x dept"))` named, `r f3(cl("Claude (blind)", "store x dept"))` blind) was level with the ensemble (`r f3(cl("Ensemble (sum of items)", "store x dept"))`) and ahead of every single model, the best of which was `r tot_rank$model[2]` (`r f3(tot_rank$WRMSSE[2])`). Fitting the totals directly also matters: AutoARIMA improves from `r f3(cl("AutoARIMA (sum of items)", "store x dept"))` to `r f3(cl("AutoARIMA (direct)", "store x dept"))` and Chronos from `r f3(cl("Chronos (sum of items)", "store x dept"))` to `r f3(cl("Chronos (direct)", "store x dept"))`. On the 100 items, Claude ranked behind `r item_rank$model[1]` and `r item_rank$model[2]`. Named and blind forecasts were equally accurate (`r f3(cl("Claude (named)", "store x dept"))` vs `r f3(cl("Claude (blind)", "store x dept"))` on totals), so real dates and product names gave Claude no advantage.
@@ -325,7 +325,7 @@ On the 12 totals, Claude (`r f3(cl("Claude (named)", "store x dept"))` named, `r
 **How Claude differs from Chronos.** Both are transformer models used zero-shot, but they are different tools:
 
 | | Chronos | Claude |
-|---|---|---|
+|:---:|:---:|:---:|
 | Trained on | Time series (about 100 billion observations; M5 held out) | Text and code |
 | Reads our data as | Numbers (scaled and tokenised) | Text, one row per day |
 | Inputs used | Sales history only | Sales history, calendar, price |
@@ -336,7 +336,7 @@ On the 12 totals, Claude (`r f3(cl("Claude (named)", "store x dept"))` named, `r
 **Risks of using an LLM, and how we handled them.**
 
 | Risk | What we did | What remains |
-|---|---|---|
+|:---:|:---:|:---:|
 | Pre-training contamination: M5 is public and may be in Claude's training data | Named vs blind comparison: blind prompts remove names, dates and the year | The blind test reduces identity cues, but it **cannot guarantee** that contamination is excluded: the sales pattern itself could still be recognised |
 | Unstable output: answers can vary between runs | Fixed prompt and model, every response saved | We did not rerun forecasts to measure the variation |
 | Cost and scale | Tested a subset (100 items + 12 totals), cached every response | Results on 112 series may not hold for all 5,748 |
@@ -355,7 +355,7 @@ tibble(model = c("Chronos", "LightGBM", "AutoETS", "AutoARIMA")) |>
   bind_rows(tibble(model = "Claude", `Time, all series` = paste0("~", round(claude_full_s / 3600, 1), " h (est.)"),
                    Training = "None", `Cost per run` = paste0("~$", round(claude_full_cost), " (est.)"))) |>
   rename(Model = model) |>
-  kable(align = "llll")
+  kable(align = "c")
 ```
 
 Chronos is about `r round(secs("AutoARIMA") / secs("Chronos"))` times faster than AutoARIMA and `r round(secs("LightGBM") / secs("Chronos"))` times faster than LightGBM, with no training. Its strength in this study is speed rather than accuracy. Claude is the opposite: accurate on the totals, but slow and costly at scale.
@@ -415,7 +415,7 @@ nv_boot |>
 We built **Shelf Signal**, an interactive version of this analysis, by extending our teammate's original Shelf Signal dashboard (code at <https://github.com/Jing0712/shelf-signal>) with this project's models and results. It is live at <https://jing0712.github.io/shelf-signal/#planner> (the link opens on the Order planner) and is a single self-contained web page (`docs/index.html` in the project repository) with seven tabs:
 
 | Tab | What it shows | Report section |
-|---|---|---|
+|:---:|:---:|:---:|
 | Overview | Headline results, weekly and weekday sales patterns | 1, 3 |
 | Forecast explorer | Any total, store, department, store × department or item; actual vs every model over the 28 test days, with per-series accuracy | 5.1–5.2 |
 | Model comparison | Accuracy, accuracy by level, run time, and which model wins each item | 5.1, 5.4 |
@@ -446,7 +446,7 @@ tm_metrics |>
   pivot_wider(names_from = split, values_from = RMSSE) |>
   arrange(test) |>
   transmute(Model = model, `Validation RMSSE` = f3(validation), `Test RMSSE` = f3(test)) |>
-  kable(align = "lrr")
+  kable(align = "c")
 ```
 
 ```{r tm-calc}
@@ -473,7 +473,7 @@ tm_inv |>
 
 The inventory backtest complements our newsvendor analysis. With no safety stock ($z = 0$), the forecasts lose very different amounts of demand (from `r min(tm_inv |> filter(z == 0) |> group_by(model) |> summarise(l = sum(lost_units)) |> pull(l))` to `r max(tm_inv |> filter(z == 0) |> group_by(model) |> summarise(l = sum(lost_units)) |> pull(l))` units); with enough safety stock, lost sales disappear for every model and the difference becomes how much stock each needs to hold. As in the newsvendor analysis, the choice of service level or margin moves the decision more than the choice of model. Shelf Signal notes that observed sales stand in for demand, so this is an illustration of the trade-off, not a cost estimate.
 
-![Shelf Signal, Order planner tab: the demand distribution for one item-day with the margin-matched order (blue) and actual sales (amber), orders against actual sales over the 28 test days, and profit by model.](dashboard.png){width=100%}
+![Shelf Signal, Order planner tab: the demand distribution for one item-day with the margin-matched order (orange) and actual sales (black), orders against actual sales over the 28 test days, and profit by model.](dashboard.png){width=100%}
 
 # Conclusions
 

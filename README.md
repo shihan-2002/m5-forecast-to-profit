@@ -122,9 +122,9 @@ We turned the ensemble's forecasts into daily orders for every item and scored t
 
 ## 9. Demo: Shelf Signal dashboard
 
-**[Open the live dashboard](https://jing0712.github.io/shelf-signal/#planner)**: it extends our teammate's original Shelf Signal ([code](https://github.com/Jing0712/shelf-signal)) with every model in this project.
+**[Open the live dashboard](https://jing0712.github.io/shelf-signal/#planner)**: Shelf Signal v2, built by our teammate Jing Chang ([code](https://github.com/Jing0712/shelf-signal)), brings every model in this project into one interactive page.
 
-<img src="figures/dashboard.png" width="800" alt="Shelf Signal order planner">
+<img src="figures/dashboard.png" width="800" alt="Shelf Signal order planner: demand distribution with the margin-matched order, and orders vs actual sales">
 
 - **Forecast explorer:** pick any total, store, department or item and compare every model against actual sales.
 - **AI lab:** Claude's own reasoning for each series, and the named-vs-blind test.

@@ -443,6 +443,8 @@ To explore these trade-offs interactively, see our dashboard, Shelf Signal, at <
 ::: {#refs}
 :::
 
+{{< pagebreak >}}
+
 # Appendix A: Interactive dashboard (Shelf Signal) {.unnumbered}
 
 We built **Shelf Signal**, an interactive version of this analysis, by extending our teammate's original Shelf Signal dashboard (code at <https://github.com/Jing0712/shelf-signal>) with this project's models and results. It is live at <https://jing0712.github.io/shelf-signal/#planner> (the link opens on the Order planner) and is a single self-contained web page (`docs/index.html` in the project repository) with seven tabs:

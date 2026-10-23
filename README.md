@@ -44,7 +44,7 @@ The data is hard: weekends sell about 20% above an average day, and the typical 
 | Seasonal naive | Benchmark | Same weekday last week | Last week |
 | Claude Opus 5.5 (experiment) | General-purpose AI | Reads sales as text and reasons; 112 series only | History + price, calendar |
 
-## 4. Traditional wins accuracy; AI wins speed
+## 4. Traditional models win on accuracy
 
 | Model | Overall accuracy (WRMSSE) | Store totals (daily error) | Single items (RMSSE) | Time for all series | Training needed |
 |---|---|---|---|---|---|
@@ -95,11 +95,12 @@ Claude received each series' last year of daily sales as text and returned 28 da
 
 The blind test works like a permutation test: if the labels carry no information, removing them should not change the result, and it did not. It cannot guarantee contamination is excluded, though: the sales pattern itself could still be recognised.
 
-## 8. Our answer: not yet on accuracy, yes on speed
+## 8. Our answer: use a traditional ensemble
 
 - **Traditional methods lead on accuracy:** LightGBM, AutoETS and their average are the three best.
-- **Chronos wins on speed:** 10 seconds for all series, no training.
-- **Claude matched the best on totals:** promising, but tested on 112 series only.
+- **AI shows no clear accuracy advantage:** Chronos trails the seasonal-naive benchmark overall, and Claude only matched the ensemble on the 12 totals, tested on 112 series only.
+- **AI lacks interpretability:** Chronos is a black box, and Claude's written reasoning cannot be verified and its forecasts are not exactly reproducible, whereas AutoETS's level, trend and season and LightGBM's inputs can be inspected.
+- **Recommendation:** average AutoETS and LightGBM.
 
 ### Business insight: the best order is not the forecast
 
@@ -107,7 +108,7 @@ Ordering stock is a newsvendor problem. Running out loses the margin (underage c
 
 $$Q^* = F^{-1}\left(\frac{c_u}{c_u + c_o}\right) = F^{-1}(\text{margin})$$
 
-We turned the ensemble's forecasts into daily orders for every item and scored them against actual sales:
+We turned the ensemble's forecasts into daily orders for every item and scored them against actual sales. The ensemble gives a single number, not a distribution, so to read off a quantile we assume demand follows a negative binomial distribution centred on its forecast (Chronos uses its own quantiles):
 
 <img src="figures/fig-nv-policy.png" width="700" alt="Profit from ordering the forecast vs ordering the margin quantile">
 

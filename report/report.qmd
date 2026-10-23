@@ -128,7 +128,7 @@ item_rank <- claude |> filter(level == "item x store") |> arrange(WRMSSE)
 - **Claude matched, but did not beat, the best traditional approach.** On the 12 store × department totals it scored `r f3(cl("Claude (named)", "store x dept"))` (named) and `r f3(cl("Claude (blind)", "store x dept"))` (blind), level with the ensemble (`r f3(cl("Ensemble (sum of items)", "store x dept"))`) and ahead of every single model; on 100 sampled items it trailed AutoETS (`r f3(cl("Claude (blind)", "item x store"))` vs `r f3(item_rank$WRMSSE[1])`). Hiding names and dates did not change its accuracy, but this cannot fully rule out that it has seen the public data.
 - **Business insight.** The best order quantity is not the forecast: it is a quantile of the demand distribution set by the item's margin (the newsvendor problem). Turning forecasts into orders, ordering that quantile instead of the forecast was worth up to \$`r round(pol_gap(0.2) / 1000)`k over 28 days, far more than the choice of model; the more accurate model earned significantly more only at high margins.
 
-**Answer: not yet on accuracy, yes on speed.** Traditional methods still lead on accuracy: LightGBM is the best single model, AutoETS is close, and their simple average is best overall. Chronos offers a large speed advantage; Claude matches the best traditional approach on totals but is slow and costly at scale, with too little evidence to recommend; and replenishment decisions depend on costs and uncertainty, not on forecast accuracy alone.
+**Answer: use a traditional ensemble.** Traditional methods still lead on accuracy: LightGBM is the best single model, AutoETS is close, and their simple average is best overall. AI shows no clear accuracy advantage: Chronos trails the seasonal-naive benchmark, and Claude only matches the ensemble on the 12 totals, on too little evidence to recommend. AI also lacks interpretability: Chronos is a black box, and Claude's written reasoning cannot be verified and its forecasts are not exactly reproducible, whereas AutoETS's level, trend and season and LightGBM's inputs can be inspected. Replenishment decisions depend on costs and uncertainty, not on forecast accuracy alone.
 
 # Purpose and motivation
 
@@ -426,13 +426,11 @@ To explore these trade-offs interactively, see our dashboard, Shelf Signal, at <
 
 # Conclusions
 
-1. **Traditional methods still lead on accuracy.** LightGBM is the most accurate single model, AutoETS is close behind, and their simple average is the most accurate of all, a result our teammate's Shelf Signal study reproduces on a different setting.
-2. **Rankings depend on the level and the window.** The models differ most at store and department level, are close for single items, and close rankings can flip between test windows.
-3. **AI wins on speed.** Chronos forecasts every series in `r fmt_time(secs("Chronos"))` with no training, against `r fmt_time(secs("AutoARIMA"))` for AutoARIMA; Claude, the other AI, was slow and costly.
-4. **Claude matched the best traditional approach on totals, on limited evidence.** It was level with the ensemble on the 12 totals and behind AutoETS on items, was tested on 112 series only, and contamination cannot be ruled out.
-5. **Replenishment depends on costs and uncertainty.** The best order is a margin-dependent quantile of demand: ordering that quantile instead of the forecast was worth far more than switching models.
+1. **Traditional methods still lead on accuracy.** LightGBM is the most accurate single model, AutoETS is close behind, and their simple average is the most accurate of all, a result our teammate's Shelf Signal study reproduces on a different setting; the gaps are largest at store and department level, small for single items, and close rankings can flip between test windows.
+2. **AI shows no clear accuracy advantage and lacks interpretability.** Chronos trailed the seasonal-naive benchmark overall; Claude was level with the ensemble on the 12 totals but behind AutoETS on items, was tested on 112 series only, and contamination cannot be ruled out. Neither explains its forecasts in a way that can be checked: Chronos is a black box, and Claude's written reasoning cannot be verified and its forecasts are not exactly reproducible.
+3. **Replenishment depends on costs and uncertainty.** The best order is a margin-dependent quantile of demand: ordering that quantile instead of the forecast was worth far more than switching models.
 
-**Practical recommendation:** for item-level forecasts, average a statistical model (AutoETS) with LightGBM; use Chronos where speed or the lack of training data matters; fit store and department totals directly; and choose models on the metric that matches the decision they support.
+**Practical recommendation:** use the traditional ensemble: for item-level forecasts, average a statistical model (AutoETS) with LightGBM; fit store and department totals directly; and choose models on the metric that matches the decision they support.
 
 # Limitations and next steps
 
@@ -440,7 +438,6 @@ To explore these trade-offs interactively, see our dashboard, Shelf Signal, at <
 - **Generalisation.** All results come from one retailer, one category (food), four California stores and one month in 2016. Rankings may differ for other categories, regions, retailers or more recent data, and for newer or larger versions of the AI models.
 - **Claude on a subset, with residual contamination risk.** Its results rest on 112 series. The blind test reduces identity cues but cannot guarantee the data was not seen in training, and its forecasts can vary between runs. A stronger check is a hidden test: data Claude cannot have seen, such as sales published after its training cutoff or a retailer's private data.
 - **Claude is costly, and its explanations were not valued.** Every series is a paid request, so a daily run over thousands of items costs far more than the other models, which run free on a laptop. Claude also returns a written explanation with each forecast; we did not measure whether those explanations improve decisions enough to justify the cost.
-- **Simple LightGBM.** One fixed setting; M5 winners tuned and ensembled many models.
 - **Sales are not demand.** A stocked-out shelf records zero sales, so demand is understated for every model.
 - **Newsvendor analysis is exploratory.** It assumed perishable stock, zero salvage value and, for every model except Chronos, a negative binomial demand distribution centred on the model's forecast, with each item's spread (variance-to-mean ratio) taken from its last 180 training days; using each model's own uncertainty (prediction intervals, quantile regression) would make it a fuller test. A promising next step is a hybrid: the ensemble's forecast for the level and Chronos's quantiles for the spread, scored by profit and pinball loss at each margin.
 

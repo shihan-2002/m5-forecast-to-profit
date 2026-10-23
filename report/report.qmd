@@ -370,7 +370,7 @@ tibble(model = c("Chronos", "LightGBM", "AutoETS", "AutoARIMA")) |>
   kable(align = "c")
 ```
 
-Chronos is about `r round(secs("AutoARIMA") / secs("Chronos"))` times faster than AutoARIMA and `r round(secs("LightGBM") / secs("Chronos"))` times faster than LightGBM, with no training. But the gap matters little in practice: the ensemble's `r round((secs("AutoETS") + secs("LightGBM")) / 60)` minutes already fits an overnight run. Claude is the opposite: accurate on the totals, but slow and costly at scale.
+Chronos is about `r round(secs("AutoARIMA") / secs("Chronos"))` times faster than AutoARIMA and `r round(secs("LightGBM") / secs("Chronos"))` times faster than LightGBM, with no training. But the gap matters little in practice: the ensemble's `r round((secs("AutoETS") + secs("LightGBM")) / 60)` minutes already fits an overnight run. Claude, by contrast, is slow and costly at scale, even though it matched the ensemble on the totals.
 
 # Business insight: the best order is not the forecast (the newsvendor problem)
 

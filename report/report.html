@@ -2489,11 +2489,11 @@ Table 2: The models compared, and what each one sees.
 <div aria-describedby="tbl-models-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <table class="caption-top table">
 <colgroup>
-<col style="width: 18%">
+<col style="width: 17%">
 <col style="width: 15%">
-<col style="width: 14%">
-<col style="width: 19%">
-<col style="width: 31%">
+<col style="width: 13%">
+<col style="width: 18%">
+<col style="width: 36%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -2507,30 +2507,30 @@ Table 2: The models compared, and what each one sees.
 <tbody>
 <tr class="odd">
 <td style="text-align: center;">AutoETS</td>
-<td style="text-align: center;">Classical statistics</td>
-<td style="text-align: center;">Yes, one model per series</td>
-<td style="text-align: center;">Last 730 days of that series</td>
-<td style="text-align: center;">Exponential smoothing with a 7-day season; error, trend and season form chosen automatically by AIC</td>
+<td style="text-align: center;">Statistics</td>
+<td style="text-align: center;">Yes, per series</td>
+<td style="text-align: center;">Last 730 days</td>
+<td style="text-align: center;">Exponential smoothing with a 7-day season; error, trend and season form chosen by AIC</td>
 </tr>
 <tr class="even">
 <td style="text-align: center;">AutoARIMA</td>
-<td style="text-align: center;">Classical statistics</td>
-<td style="text-align: center;">Yes, one model per series</td>
-<td style="text-align: center;">Last 730 days of that series</td>
-<td style="text-align: center;">Seasonal ARIMA with a 7-day cycle; orders chosen automatically by AIC</td>
+<td style="text-align: center;">Statistics</td>
+<td style="text-align: center;">Yes, per series</td>
+<td style="text-align: center;">Last 730 days</td>
+<td style="text-align: center;">Seasonal ARIMA with a 7-day cycle; orders chosen by AIC</td>
 </tr>
 <tr class="odd">
 <td style="text-align: center;">LightGBM</td>
 <td style="text-align: center;">Machine learning</td>
 <td style="text-align: center;">Yes, one global model</td>
-<td style="text-align: center;">All series, plus price, weekday, month, holidays, SNAP</td>
+<td style="text-align: center;">All series + price, calendar, SNAP</td>
 <td style="text-align: center;">Gradient-boosted trees on sales lags of 28+ days and rolling means; Tweedie loss</td>
 </tr>
 <tr class="even">
 <td style="text-align: center;">Chronos-Bolt (small)</td>
-<td style="text-align: center;">AI foundation model for time series</td>
+<td style="text-align: center;">AI foundation model</td>
 <td style="text-align: center;">No (zero-shot)</td>
-<td style="text-align: center;">Last 512 days of that series</td>
+<td style="text-align: center;">Last 512 days</td>
 <td style="text-align: center;">Transformer pre-trained on about 100 billion observations; outputs quantiles</td>
 </tr>
 <tr class="odd">
@@ -2549,9 +2549,9 @@ Table 2: The models compared, and what each one sees.
 </tr>
 <tr class="odd">
 <td style="text-align: center;">Claude Opus 5.5 (experiment)</td>
-<td style="text-align: center;">General-purpose large language model</td>
+<td style="text-align: center;">General-purpose LLM</td>
 <td style="text-align: center;">No (zero-shot)</td>
-<td style="text-align: center;">Last 365 days as text, with weekday, holiday, SNAP, price</td>
+<td style="text-align: center;">Last 365 days as text + calendar, price</td>
 <td style="text-align: center;">Reads the numbers and reasons about them; no statistical model is fitted</td>
 </tr>
 </tbody>

@@ -181,14 +181,14 @@ weekday |>
 ## Models
 
 | Model | Family | Trained on our data? | Inputs | How it forecasts |
-|:----------------:|:-------------:|:------------:|:-----------------:|:----------------------------:|
-| AutoETS | Classical statistics | Yes, one model per series | Last 730 days of that series | Exponential smoothing with a 7-day season; error, trend and season form chosen automatically by AIC |
-| AutoARIMA | Classical statistics | Yes, one model per series | Last 730 days of that series | Seasonal ARIMA with a 7-day cycle; orders chosen automatically by AIC |
-| LightGBM | Machine learning | Yes, one global model | All series, plus price, weekday, month, holidays, SNAP | Gradient-boosted trees on sales lags of 28+ days and rolling means; Tweedie loss |
-| Chronos-Bolt (small) | AI foundation model for time series | No (zero-shot) | Last 512 days of that series | Transformer pre-trained on about 100 billion observations; outputs quantiles |
+|:----------------:|:--------------:|:------------:|:-----------------:|:------------------------------------:|
+| AutoETS | Statistics | Yes, per series | Last 730 days | Exponential smoothing with a 7-day season; error, trend and season form chosen by AIC |
+| AutoARIMA | Statistics | Yes, per series | Last 730 days | Seasonal ARIMA with a 7-day cycle; orders chosen by AIC |
+| LightGBM | Machine learning | Yes, one global model | All series + price, calendar, SNAP | Gradient-boosted trees on sales lags of 28+ days and rolling means; Tweedie loss |
+| Chronos-Bolt (small) | AI foundation model | No (zero-shot) | Last 512 days | Transformer pre-trained on about 100 billion observations; outputs quantiles |
 | Ensemble | Combination | No extra fitting | AutoETS and LightGBM forecasts | Unweighted average of AutoETS and LightGBM |
 | Seasonal naive | Benchmark | No | Last week | Repeats the same weekday from last week |
-| Claude Opus 5.5 (experiment) | General-purpose large language model | No (zero-shot) | Last 365 days as text, with weekday, holiday, SNAP, price | Reads the numbers and reasons about them; no statistical model is fitted |
+| Claude Opus 5.5 (experiment) | General-purpose LLM | No (zero-shot) | Last 365 days as text + calendar, price | Reads the numbers and reasons about them; no statistical model is fitted |
 
 : The models compared, and what each one sees. {#tbl-models}
 

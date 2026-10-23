@@ -496,7 +496,7 @@ The inventory backtest complements our newsvendor analysis. With no safety stock
 - **Item-level gaps not formally tested.** "Close" at item level is descriptive.
 - **Simple LightGBM.** One fixed setting; M5 winners tuned and ensembled many models.
 - **Sales are not demand.** A stocked-out shelf records zero sales, so demand is understated for every model.
-- **Newsvendor analysis is exploratory.** It assumed perishable stock, zero salvage value and a common demand distribution; using each model's own uncertainty (prediction intervals, quantile regression) would make it a fuller test.
+- **Newsvendor analysis is exploratory.** It assumed perishable stock, zero salvage value and, for every model except Chronos, a negative binomial demand distribution centred on the model's forecast, with each item's spread (variance-to-mean ratio) taken from its last 180 training days; using each model's own uncertainty (prediction intervals, quantile regression) would make it a fuller test.
 
 # Use of AI tools and reproducibility
 

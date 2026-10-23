@@ -28,6 +28,7 @@ format:
     fig-height: 3.6
     colorlinks: true
     linestretch: 1.15
+    fig-pos: 'H'
     hyperrefoptions:
       - linktoc=all
     template-partials:
@@ -37,6 +38,8 @@ format:
         \usepackage{sectsty}
         \allsectionsfont{\normalsize\bfseries\rmfamily}
         \usepackage[justification=centering,singlelinecheck=false]{caption}
+        \usepackage{ragged2e}
+        \AtBeginDocument{\RaggedRight}
 bibliography: references.bib
 knitr:
   opts_chunk:
@@ -328,22 +331,22 @@ On the 12 totals, Claude (`r f3(cl("Claude (named)", "store x dept"))` named, `r
 **How Claude differs from Chronos.** Both are transformer models used zero-shot, but they are different tools:
 
 | | Chronos | Claude |
-|:--------------:|:--------------------------:|:--------------------------:|
-| Trained on | Time series (about 100 billion observations; M5 held out) | Text and code |
-| Reads our data as | Numbers (scaled and tokenised) | Text, one row per day |
-| Inputs used | Sales history only | Sales history, calendar, price |
-| Output | Quantile forecasts | Point forecast, percentiles and a written explanation |
-| Speed and cost, all series | `r fmt_time(secs("Chronos"))` on a laptop, free | About `r round(claude_full_s / 3600, 1)` hours and \$`r round(claude_full_cost)` (estimated) |
-| Same output on a rerun? | Yes | Not exactly |
+|:---------|:---------:|:---------:|
+| **Trained on** | Time series (M5 held out) | Text and code |
+| **Reads our data as** | Scaled numbers | Text, one row per day |
+| **Inputs** | Sales history | Sales, calendar, price |
+| **Output** | Quantiles | Forecast + written reasoning |
+| **All 5,748 series** | `r fmt_time(secs("Chronos"))`, free | ~`r round(claude_full_s / 3600, 1)` h, ~\$`r round(claude_full_cost)` |
+| **Same output on rerun?** | Yes | Not exactly |
 
 **Risks of using an LLM, and how we handled them.**
 
 | Risk | What we did | What remains |
-|:------------------------:|:------------------------------:|:------------------------------:|
-| Pre-training contamination: M5 is public and may be in Claude's training data | Named vs blind comparison: blind prompts remove names, dates and the year | The blind test reduces identity cues, but it **cannot guarantee** that contamination is excluded: the sales pattern itself could still be recognised |
-| Unstable output: answers can vary between runs | Fixed prompt and model, every response saved | We did not rerun forecasts to measure the variation |
-| Cost and scale | Tested a subset (100 items + 12 totals), cached every response | Results on 112 series may not hold for all 5,748 |
-| Malformed answers | Required a fixed JSON schema; checked 28 days returned; retried on failure | None observed in 224 calls |
+|:---------|:---------:|:---------:|
+| **Contamination** (M5 is public) | Named vs blind test | Recalled patterns can't be ruled out |
+| **Unstable output** | Fixed prompt and model; replies saved | Rerun variation not measured |
+| **Cost and scale** | 112-series subset, replies cached | May not hold for all 5,748 |
+| **Malformed answers** | Fixed JSON, 28-day check, retries | None in 224 calls |
 
 ## Computational efficiency
 
@@ -419,7 +422,7 @@ To explore these trade-offs interactively, see our dashboard, Shelf Signal, at <
 
 1. **Traditional methods still lead on accuracy.** LightGBM is the most accurate single model, AutoETS is close behind, and their simple average is the most accurate of all, a result our teammate's Shelf Signal study reproduces on a different setting.
 2. **Rankings depend on the level and the window.** The models differ most at store and department level, are close for single items, and close rankings can flip between test windows.
-3. **Chronos offers a large speed advantage**: no training and `r fmt_time(secs("Chronos"))` for all series, but weaker overall accuracy in this study.
+3. **AI wins on speed.** Chronos forecasts every series in `r fmt_time(secs("Chronos"))` with no training, against `r fmt_time(secs("AutoARIMA"))` for AutoARIMA; Claude, the other AI, was slow and costly.
 4. **Claude matched the best traditional approach on totals, on limited evidence.** It was level with the ensemble on the 12 totals and behind AutoETS on items, was tested on 112 series only, and contamination cannot be ruled out.
 5. **Replenishment depends on costs and uncertainty.** The best order is a margin-dependent quantile of demand: ordering that quantile instead of the forecast was worth far more than switching models.
 
@@ -431,29 +434,14 @@ To explore these trade-offs interactively, see our dashboard, Shelf Signal, at <
 - **Generalisation.** All results come from one retailer, one category (food), four California stores and one month in 2016. Rankings may differ for other categories, regions, retailers or more recent data, and for newer or larger versions of the AI models.
 - **Claude on a subset, with residual contamination risk.** Its results rest on 112 series. The blind test reduces identity cues but cannot guarantee the data was not seen in training, and its forecasts can vary between runs. A stronger check is a hidden test: data Claude cannot have seen, such as sales published after its training cutoff or a retailer's private data.
 - **Claude is costly, and its explanations were not valued.** Every series is a paid request, so a daily run over thousands of items costs far more than the other models, which run free on a laptop. Claude also returns a written explanation with each forecast; we did not measure whether those explanations improve decisions enough to justify the cost.
-- **Item-level gaps not formally tested.** "Close" at item level is descriptive.
 - **Simple LightGBM.** One fixed setting; M5 winners tuned and ensembled many models.
 - **Sales are not demand.** A stocked-out shelf records zero sales, so demand is understated for every model.
 - **Newsvendor analysis is exploratory.** It assumed perishable stock, zero salvage value and, for every model except Chronos, a negative binomial demand distribution centred on the model's forecast, with each item's spread (variance-to-mean ratio) taken from its last 180 training days; using each model's own uncertainty (prediction intervals, quantile regression) would make it a fuller test. A promising next step is a hybrid: the ensemble's forecast for the level and Chronos's quantiles for the spread, scored by profit and pinball loss at each margin.
-
-# Use of AI tools and reproducibility
-
-AI played two roles in this project: as forecasting models under test, and as a coding and writing assistant.
-
-| Tool | What we used it for | How we checked it |
-|:------------:|:----------------------:|:------------------------------------------:|
-| Chronos-Bolt (small) | Zero-shot forecasts for all 5,748 series | Scored on the same held-out 28 days as every other model |
-| Claude Opus 5.5 (API) | Zero-shot forecasts for 112 series (\$`r sprintf("%.2f", claude_cost)`) | Fixed JSON format, 28-day check and retries; named vs blind test; every prompt and response saved in `outputs/claude_raw/` |
-| Claude Code | Data pipeline, evaluation code, charts, dashboard, slides and report drafts | We reviewed all output and fixed three first-pass errors: LightGBM overfitting on the item ID, Chronos's median used as its mean, and an unfair summed-vs-direct comparison of totals. Every number in the report is read from the pipeline's output files |
-
-The forecasting pipeline is written in Python (`src/`); this report is written in R and reads its CSV outputs (`outputs/results/report/`). All code, results and the dashboard source are at <https://github.com/shihan-2002/m5-forecast-to-profit>, whose README lists the steps to reproduce everything.
 
 # References {.unnumbered}
 
 ::: {#refs}
 :::
-
-{{< pagebreak >}}
 
 # Appendix A: Interactive dashboard (Shelf Signal) {.unnumbered}
 
@@ -518,5 +506,18 @@ tm_inv |>
 
 The inventory backtest complements our newsvendor analysis. With no safety stock ($z = 0$), the forecasts lose very different amounts of demand (from `r min(tm_inv |> filter(z == 0) |> group_by(model) |> summarise(l = sum(lost_units)) |> pull(l))` to `r max(tm_inv |> filter(z == 0) |> group_by(model) |> summarise(l = sum(lost_units)) |> pull(l))` units); with enough safety stock, lost sales disappear for every model and the difference becomes how much stock each needs to hold. As in the newsvendor analysis, the choice of service level or margin moves the decision more than the choice of model. Shelf Signal notes that observed sales stand in for demand, so this is an illustration of the trade-off, not a cost estimate.
 
-![Shelf Signal, Order planner tab: the demand distribution for one item-day with the margin-matched order (orange) and actual sales (black), and orders against actual sales over the 28 test days. Live at <https://jing0712.github.io/shelf-signal/#planner>; built on Jing Chang's original Shelf Signal (<https://github.com/Jing0712/shelf-signal>).](dashboard.png){width=100% fig-align="center"}
+![Shelf Signal, Order planner tab: the demand distribution for one item-day with the margin-matched order (orange) and actual sales (black), and orders against actual sales over the 28 test days. Live at <https://jing0712.github.io/shelf-signal/#planner>; built on Jing Chang's original Shelf Signal (<https://github.com/Jing0712/shelf-signal>).](dashboard.png){width=78% fig-align="center"}
 
+{{< pagebreak >}}
+
+# Appendix B: Use of AI tools and reproducibility {.unnumbered}
+
+AI played two roles in this project: as forecasting models under test, and as a coding and writing assistant.
+
+| Tool | What we used it for | How we checked it |
+|:------------:|:----------------------:|:------------------------------------------:|
+| Chronos-Bolt (small) | Zero-shot forecasts for all 5,748 series | Scored on the same held-out 28 days as every other model |
+| Claude Opus 5.5 (API) | Zero-shot forecasts for 112 series (\$`r sprintf("%.2f", claude_cost)`) | Fixed JSON format, 28-day check and retries; named vs blind test; every prompt and response saved in `outputs/claude_raw/` |
+| Claude Code | Data pipeline, evaluation code, charts, dashboard, slides and report drafts | We reviewed all output and fixed three first-pass errors: LightGBM overfitting on the item ID, Chronos's median used as its mean, and an unfair summed-vs-direct comparison of totals. Every number in the report is read from the pipeline's output files |
+
+The forecasting pipeline is written in Python (`src/`); this report is written in R and reads its CSV outputs (`outputs/results/report/`). All code, results and the dashboard source are at <https://github.com/shihan-2002/m5-forecast-to-profit>, whose README lists the steps to reproduce everything.

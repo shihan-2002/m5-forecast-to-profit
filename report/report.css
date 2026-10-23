@@ -5,3 +5,4 @@ table { margin-left: auto; margin-right: auto; }
 figure, .figure, .quarto-figure { text-align: center; }
 .figure-caption, figcaption, caption { text-align: center; }
 body { line-height: 1.15; }
+p, li { text-align: left; }

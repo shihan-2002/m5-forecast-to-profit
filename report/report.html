@@ -2404,11 +2404,23 @@ p, li { text-align: left; }
 <section id="data" class="level1">
 <h1>Data</h1>
 <p>We use the M5 data <span class="citation" data-cites="kaggle_m5">(<a href="#ref-kaggle_m5" role="doc-biblioref">University of Nicosia and Walmart 2020</a>)</span> for the food category of Walmart’s four California stores: 5,748 daily item-store series, with weekly prices, holidays and events, and SNAP (food-stamp) payment days.</p>
+<div id="tbl-data" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-data-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 1: Data used in this study.
+</figcaption>
+<div aria-describedby="tbl-data-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <table class="caption-top table">
 <colgroup>
 <col style="width: 30%">
 <col style="width: 69%">
 </colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Item</th>
+<th style="text-align: center;">Detail</th>
+</tr>
+</thead>
 <tbody>
 <tr class="odd">
 <td style="text-align: center;">Stores and items</td>
@@ -2432,6 +2444,9 @@ p, li { text-align: left; }
 </tr>
 </tbody>
 </table>
+</div>
+</figure>
+</div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div id="fig-weekly" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
@@ -2466,6 +2481,12 @@ Figure 2: Average daily sales by weekday, indexed to the average day (= 100).
 <h1>Methodology and validation</h1>
 <section id="models" class="level2">
 <h2 class="anchored" data-anchor-id="models">Models</h2>
+<div id="tbl-models" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-models-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 2: The models compared, and what each one sees.
+</figcaption>
+<div aria-describedby="tbl-models-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <table class="caption-top table">
 <colgroup>
 <col style="width: 18%">
@@ -2535,6 +2556,9 @@ Figure 2: Average daily sales by weekday, indexed to the average day (= 100).
 </tr>
 </tbody>
 </table>
+</div>
+</figure>
+</div>
 <p><strong>Why these models.</strong> Each one stands for an approach a retailer could realistically use. AutoETS and AutoARIMA are the classical models covered in the course, fitted automatically so that no series needs hand-tuning. LightGBM is the machine-learning method that dominated the M5 competition, so it is the benchmark an AI model has to beat. Chronos-Bolt is a widely used, open time series foundation model that runs on a laptop; we chose the small version for speed. Claude represents general-purpose LLMs, the “ask ChatGPT or Claude” route. The ensemble tests the classic finding that combining a statistical and a machine-learning forecast helps, and seasonal naive is the floor every model must clear.</p>
 <p><strong>What information each model had.</strong> The models do not see the same inputs: AutoETS, AutoARIMA and Chronos use only the series’ own history, while LightGBM and Claude also see prices and the calendar. None of them sees the test window. The Chronos paper keeps M5, and every retail dataset it uses, out of training as held-out test sets, so Chronos never trained on this data <span class="citation" data-cites="ansari2024">(<a href="#ref-ansari2024" role="doc-biblioref">Ansari et al. 2024</a>)</span>.</p>
 <p><strong>How the AI forecasts were produced.</strong> <em>Chronos</em> reads the last 512 days of each series and returns nine quantiles (10th to 90th percentile) for each of the next 28 days; nothing is fitted. Its built-in point forecast is the median, which sits below the mean for sparse, right-skewed sales, so we use the average of the nine quantiles as its point forecast. <em>Claude</em> receives each series as text, one row per day, with an instruction to return 28 daily forecasts in a fixed JSON format with a short explanation; the code checks every reply and retries on a malformed one (details in <a href="#sec-claude" class="quarto-xref">Section 5.3</a>).</p>
@@ -2561,7 +2585,7 @@ Figure 2: Average daily sales by weekday, indexed to the average day (= 100).
 <div id="tbl-acc" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-layout-align="center">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-acc-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 1: Accuracy on all 5,748 series over the 28-day test window, sorted by WRMSSE.
+Table 3: Accuracy on all 5,748 series over the 28-day test window, sorted by WRMSSE.
 </figcaption>
 <div aria-describedby="tbl-acc-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -2678,12 +2702,12 @@ Figure 5: RMSSE by aggregation level (lower is better). Item-level forecasts ar
 </div>
 </div>
 </div>
-<p>The models differ most at the levels retailers plan with: store, department and total. Summed to the four-store total, the daily error is 4.1% for LightGBM and 4.9% for AutoETS, against 9.9% for AutoARIMA and 10.4% for Chronos (<a href="#fig-test" class="quarto-xref">Figure 4</a>). The two weaker models fail in different ways. AutoARIMA produces nearly flat forecasts for items selling 0–2 units a day, and thousands of flat lines add up to a total that misses the weekly peaks. Chronos does follow each item’s weekly pattern, so its total has the right shape, but it runs 11% low. The shortfall is not a trend effect: it grows with sparsity (<a href="#tbl-chronos-vol" class="quarto-xref">Table 2</a>). For an item that sells nothing on most days, the lower quantiles are near zero and the rare busy days lie above the 90th percentile, so the average of the nine quantiles misses them.</p>
+<p>The models differ most at the levels retailers plan with: store, department and total. Summed to the four-store total, the daily error is 4.1% for LightGBM and 4.9% for AutoETS, against 9.9% for AutoARIMA and 10.4% for Chronos (<a href="#fig-test" class="quarto-xref">Figure 4</a>). The two weaker models fail in different ways. AutoARIMA produces nearly flat forecasts for items selling 0–2 units a day, and thousands of flat lines add up to a total that misses the weekly peaks. Chronos does follow each item’s weekly pattern, so its total has the right shape, but it runs 11% low. The shortfall is not a trend effect: it grows with sparsity (<a href="#tbl-chronos-vol" class="quarto-xref">Table 4</a>). For an item that sells nothing on most days, the lower quantiles are near zero and the rare busy days lie above the 90th percentile, so the average of the nine quantiles misses them.</p>
 <div class="cell" data-layout-align="center">
 <div id="tbl-chronos-vol" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-layout-align="center">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-chronos-vol-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 2: Chronos’s total forecast against actual sales over the test window, with items split into quarters by their sales in the last 56 training days.
+Table 4: Chronos’s total forecast against actual sales over the test window, with items split into quarters by their sales in the last 56 training days.
 </figcaption>
 <div aria-describedby="tbl-chronos-vol-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -2771,7 +2795,7 @@ Figure 7: WRMSSE on the 12 store × department totals. Pale bars are totals bui
 <div id="tbl-claude-items" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-layout-align="center">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-claude-items-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 3: Accuracy on the 100 sampled items (same items for every model).
+Table 5: Accuracy on the 100 sampled items (same items for every model).
 </figcaption>
 <div aria-describedby="tbl-claude-items-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -2833,6 +2857,12 @@ Table 3: Accuracy on the 100 sampled items (same items for every model).
 </div>
 <p>On the 12 totals, Claude (0.579 named, 0.583 blind) was level with the ensemble (0.579) and ahead of every single model, the best of which was AutoETS (direct) (0.626). Fitting the totals directly also matters: AutoARIMA improves from 0.900 to 0.644 and Chronos from 0.969 to 0.637. On the 100 items, Claude ranked behind AutoETS and AutoARIMA. Named and blind forecasts were equally accurate (0.579 vs 0.583 on totals), so real dates and product names gave Claude no advantage.</p>
 <p><strong>How Claude differs from Chronos.</strong> Both are transformer models used zero-shot, but they are different tools:</p>
+<div id="tbl-chronos-claude" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-chronos-claude-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 6: How Chronos and Claude differ.
+</figcaption>
+<div aria-describedby="tbl-chronos-claude-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -2874,7 +2904,15 @@ Table 3: Accuracy on the 100 sampled items (same items for every model).
 </tr>
 </tbody>
 </table>
-<p><strong>Risks of using an LLM, and how we handled them.</strong></p>
+</div>
+</figure>
+</div>
+<div id="tbl-risks" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-risks-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 7: Risks of using an LLM to forecast, and how we handled them.
+</figcaption>
+<div aria-describedby="tbl-risks-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <table class="caption-top table">
 <colgroup>
 <col style="width: 31%">
@@ -2911,6 +2949,9 @@ Table 3: Accuracy on the 100 sampled items (same items for every model).
 </tr>
 </tbody>
 </table>
+</div>
+</figure>
+</div>
 </section>
 <section id="computational-efficiency" class="level2">
 <h2 class="anchored" data-anchor-id="computational-efficiency">Computational efficiency</h2>
@@ -2918,7 +2959,7 @@ Table 3: Accuracy on the 100 sampled items (same items for every model).
 <div id="tbl-eff" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-layout-align="center">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-eff-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 4: Time to fit and forecast all 5,748 series on the same laptop. Claude is scaled up from its measured run.
+Table 8: Time to fit and forecast all 5,748 series on the same laptop. Claude is scaled up from its measured run.
 </figcaption>
 <div aria-describedby="tbl-eff-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -3066,6 +3107,12 @@ University of Nicosia and Walmart. 2020. <span>“M5 Forecasting – Accuracy.�
 <section id="appendix-a-interactive-dashboard-shelf-signal" class="level1 unnumbered">
 <h1 class="unnumbered">Appendix A: Interactive dashboard (Shelf Signal)</h1>
 <p>We built <strong>Shelf Signal</strong>, an interactive version of this analysis, by extending our teammate’s original Shelf Signal dashboard (code at <a href="https://github.com/Jing0712/shelf-signal" class="uri">https://github.com/Jing0712/shelf-signal</a>) with this project’s models and results. It is live at <a href="https://jing0712.github.io/shelf-signal/#planner" class="uri">https://jing0712.github.io/shelf-signal/#planner</a> (the link opens on the Order planner) and is a single self-contained web page (<code>docs/index.html</code> in the project repository) with seven tabs:</p>
+<div id="tbl-tabs" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-tabs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 9: The dashboard’s seven tabs.
+</figcaption>
+<div aria-describedby="tbl-tabs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <table class="caption-top table">
 <colgroup>
 <col style="width: 20%">
@@ -3117,6 +3164,9 @@ University of Nicosia and Walmart. 2020. <span>“M5 Forecasting – Accuracy.�
 </tr>
 </tbody>
 </table>
+</div>
+</figure>
+</div>
 <p>It covers 134 series: every aggregate level, Claude’s 100 sampled items, and the 15 store-CA_1 items from the original Shelf Signal. Forecasts are precomputed by our pipeline; only the order quantities are calculated in the browser, and actual sales are used only to score results afterwards.</p>
 <p><strong>How to use it.</strong></p>
 <ol type="1">
@@ -3133,7 +3183,7 @@ University of Nicosia and Walmart. 2020. <span>“M5 Forecasting – Accuracy.�
 <div id="tbl-tm" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-layout-align="center">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-tm-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 5: Shelf Signal: item-level RMSSE (15 items, store CA_1) on the validation window and the final test window. Lower is better.
+Table 10: Shelf Signal: item-level RMSSE (15 items, store CA_1) on the validation window and the final test window. Lower is better.
 </figcaption>
 <div aria-describedby="tbl-tm-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -3199,6 +3249,12 @@ Figure 10: Shelf Signal inventory backtest (15 items, store CA_1, 28 days): rai
 <section id="appendix-b-use-of-ai-tools-and-reproducibility" class="level1 unnumbered">
 <h1 class="unnumbered">Appendix B: Use of AI tools and reproducibility</h1>
 <p>AI played two roles in this project: as forecasting models under test, and as a coding and writing assistant.</p>
+<div id="tbl-ai" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-ai-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 11: AI tools used in this project, and how we checked them.
+</figcaption>
+<div aria-describedby="tbl-ai-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <table class="caption-top table">
 <colgroup>
 <col style="width: 17%">
@@ -3230,6 +3286,9 @@ Figure 10: Shelf Signal inventory backtest (15 items, store CA_1, 28 days): rai
 </tr>
 </tbody>
 </table>
+</div>
+</figure>
+</div>
 <p>The forecasting pipeline is written in Python (<code>src/</code>); this report is written in R and reads its CSV outputs (<code>outputs/results/report/</code>). All code, results and the dashboard source are at <a href="https://github.com/shihan-2002/m5-forecast-to-profit" class="uri">https://github.com/shihan-2002/m5-forecast-to-profit</a>, whose README lists the steps to reproduce everything.</p>
 </section>
 

@@ -142,13 +142,15 @@ We ask: **can modern AI foundation models produce more accurate and computationa
 
 We use the M5 data [@kaggle_m5] for the food category of Walmart's four California stores: `r comma(facts$n_series)` daily item-store series, with weekly prices, holidays and events, and SNAP (food-stamp) payment days.
 
-| | |
+| Item | Detail |
 |:----------:|:-------------------------:|
 | Stores and items | CA_1 to CA_4; 1,437 food items in 3 departments |
 | Unit of forecasting | One item in one store (item × store), 5,748 series |
 | Training period | 2011-01-29 to 2016-05-22 (1,941 days) |
 | Test period | 2016-05-23 to 2016-06-19 (28 days, the official M5 evaluation window) |
 | Extra inputs | Prices, holidays and events, SNAP days |
+
+: Data used in this study. {#tbl-data}
 
 ```{r fig-weekly}
 #| fig-cap: "Weekly food units sold in the four California stores. The dip each December is the Christmas store closure."
@@ -187,6 +189,8 @@ weekday |>
 | Ensemble | Combination | No extra fitting | AutoETS and LightGBM forecasts | Unweighted average of AutoETS and LightGBM |
 | Seasonal naive | Benchmark | No | Last week | Repeats the same weekday from last week |
 | Claude Opus 5.5 (experiment) | General-purpose large language model | No (zero-shot) | Last 365 days as text, with weekday, holiday, SNAP, price | Reads the numbers and reasons about them; no statistical model is fitted |
+
+: The models compared, and what each one sees. {#tbl-models}
 
 **Why these models.** Each one stands for an approach a retailer could realistically use. AutoETS and AutoARIMA are the classical models covered in the course, fitted automatically so that no series needs hand-tuning. LightGBM is the machine-learning method that dominated the M5 competition, so it is the benchmark an AI model has to beat. Chronos-Bolt is a widely used, open time series foundation model that runs on a laptop; we chose the small version for speed. Claude represents general-purpose LLMs, the "ask ChatGPT or Claude" route. The ensemble tests the classic finding that combining a statistical and a machine-learning forecast helps, and seasonal naive is the floor every model must clear.
 
@@ -339,7 +343,7 @@ On the 12 totals, Claude (`r f3(cl("Claude (named)", "store x dept"))` named, `r
 | **All 5,748 series** | `r fmt_time(secs("Chronos"))`, free | ~`r round(claude_full_s / 3600, 1)` h, ~\$`r round(claude_full_cost)` |
 | **Same output on rerun?** | Yes | Not exactly |
 
-**Risks of using an LLM, and how we handled them.**
+: How Chronos and Claude differ. {#tbl-chronos-claude}
 
 | Risk | What we did | What remains |
 |:---------|:---------:|:---------:|
@@ -347,6 +351,8 @@ On the 12 totals, Claude (`r f3(cl("Claude (named)", "store x dept"))` named, `r
 | **Unstable output** | Fixed prompt and model; replies saved | Rerun variation not measured |
 | **Cost and scale** | 112-series subset, replies cached | May not hold for all 5,748 |
 | **Malformed answers** | Fixed JSON, 28-day check, retries | None in 224 calls |
+
+: Risks of using an LLM to forecast, and how we handled them. {#tbl-risks}
 
 ## Computational efficiency
 
@@ -459,6 +465,8 @@ We built **Shelf Signal**, an interactive version of this analysis, by extending
 | Ask the analyst | Answers to 11 common questions, with numbers drawn from the results | All |
 | About | Method, limitations and credits | 8 |
 
+: The dashboard's seven tabs. {#tbl-tabs}
+
 It covers 134 series: every aggregate level, Claude's 100 sampled items, and the 15 store-CA_1 items from the original Shelf Signal. Forecasts are precomputed by our pipeline; only the order quantities are calculated in the browser, and actual sales are used only to score results afterwards.
 
 **How to use it.**
@@ -520,5 +528,7 @@ AI played two roles in this project: as forecasting models under test, and as a 
 | Chronos-Bolt (small) | Zero-shot forecasts for all 5,748 series | Scored on the same held-out 28 days as every other model |
 | Claude Opus 5.5 (API) | Zero-shot forecasts for 112 series (\$`r sprintf("%.2f", claude_cost)`) | Fixed JSON format, 28-day check and retries; named vs blind test; every prompt and response saved in `outputs/claude_raw/` |
 | Claude Code | Data pipeline, evaluation code, charts, dashboard, slides and report drafts | We reviewed all output and fixed three first-pass errors: LightGBM overfitting on the item ID, Chronos's median used as its mean, and an unfair summed-vs-direct comparison of totals. Every number in the report is read from the pipeline's output files |
+
+: AI tools used in this project, and how we checked them. {#tbl-ai}
 
 The forecasting pipeline is written in Python (`src/`); this report is written in R and reads its CSV outputs (`outputs/results/report/`). All code, results and the dashboard source are at <https://github.com/shihan-2002/m5-forecast-to-profit>, whose README lists the steps to reproduce everything.

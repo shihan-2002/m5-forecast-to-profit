@@ -1,7 +1,6 @@
 ---
 title: "Can AI Foundation Models Beat Traditional Statistical Models?"
 subtitle: "Forecasting daily demand for 5,748 Walmart food items"
-course: "Time Series Analysis and Forecasting, UCLA Anderson (Dr. William Yu). Final project report, Group 3."
 author:
   - Charlotte Zhu
   - Shihan Wang
@@ -28,6 +27,9 @@ format:
     fig-width: 7
     fig-height: 3.6
     colorlinks: true
+    linestretch: 1.5
+    hyperrefoptions:
+      - linktoc=all
     template-partials:
       - before-body.tex
     include-in-header:
@@ -107,10 +109,6 @@ tot_rank <- claude |> filter(level == "store x dept", !str_detect(model, "Claude
 item_rank <- claude |> filter(level == "item x store") |> arrange(WRMSSE)
 ```
 
-::: {.content-visible when-format="html"}
-*Time Series Analysis and Forecasting, UCLA Anderson (Dr. William Yu). Final project report, Group 3.*
-:::
-
 # Executive summary
 
 **Question.** Can modern AI foundation models produce more accurate and computationally efficient retail demand forecasts than traditional statistical and machine-learning methods?
@@ -122,11 +120,10 @@ item_rank <- claude |> filter(level == "item x store") |> arrange(WRMSSE)
 - **LightGBM is the most accurate single model across all series** (WRMSSE `r f3(w("LightGBM"))`), with **AutoETS close behind** (`r f3(w("AutoETS"))`). AutoARIMA (`r f3(w("AutoARIMA"))`) and Chronos (`r f3(w("Chronos"))`) trail the seasonal-naive benchmark (`r f3(w("SeasonalNaive"))`).
 - **Averaging the two best is better still.** The AutoETS + LightGBM ensemble scores `r f3(w("Ensemble"))`, the best of all models and best at every aggregation level, with no tuning.
 - **The ranking depends on the level.** LightGBM's lead is at store and department levels; for a single item in one store the models are close, with no model best on more than `r pct(max(best$share))` of items. Close is not the same as statistically tied: we did not test these item-level gaps formally.
-- **Chronos's advantage is speed, not accuracy here.** It needs no training and forecasts every series in `r fmt_time(secs("Chronos"))`, against `r fmt_time(secs("LightGBM"))` for LightGBM, `r fmt_time(secs("AutoETS"))` for AutoETS and `r fmt_time(secs("AutoARIMA"))` for AutoARIMA.
 - **Claude matched, but did not beat, the best traditional approach.** On the 12 store × department totals it scored `r f3(cl("Claude (named)", "store x dept"))` (named) and `r f3(cl("Claude (blind)", "store x dept"))` (blind), level with the ensemble (`r f3(cl("Ensemble (sum of items)", "store x dept"))`) and ahead of every single model; on 100 sampled items it trailed AutoETS (`r f3(cl("Claude (blind)", "item x store"))` vs `r f3(item_rank$WRMSSE[1])`). Hiding names and dates did not change its accuracy, but this cannot fully rule out that it has seen the public data.
 - **Business insight.** The best order quantity is not the forecast: it is a quantile of the demand distribution set by the item's margin (the newsvendor problem). Turning forecasts into orders, ordering that quantile instead of the forecast was worth up to \$`r round(pol_gap(0.2) / 1000)`k over 28 days, far more than the choice of model; the more accurate model earned significantly more only at high margins.
 
-**Answer: not yet on accuracy, yes on speed.** Traditional methods still lead on accuracy: LightGBM is the best single model, AutoETS is close, and their simple average is best overall. Chronos offers a large speed advantage; Claude matches the best traditional approach on totals but with too little evidence to recommend; and replenishment decisions depend on costs and uncertainty, not on forecast accuracy alone.
+**Answer: not yet on accuracy, yes on speed.** Traditional methods still lead on accuracy: LightGBM is the best single model, AutoETS is close, and their simple average is best overall. Chronos offers a large speed advantage; Claude matches the best traditional approach on totals but is slow and costly at scale, with too little evidence to recommend; and replenishment decisions depend on costs and uncertainty, not on forecast accuracy alone.
 
 # Purpose and motivation
 
@@ -477,7 +474,7 @@ tm_inv |>
 
 The inventory backtest complements our newsvendor analysis. With no safety stock ($z = 0$), the forecasts lose very different amounts of demand (from `r min(tm_inv |> filter(z == 0) |> group_by(model) |> summarise(l = sum(lost_units)) |> pull(l))` to `r max(tm_inv |> filter(z == 0) |> group_by(model) |> summarise(l = sum(lost_units)) |> pull(l))` units); with enough safety stock, lost sales disappear for every model and the difference becomes how much stock each needs to hold. As in the newsvendor analysis, the choice of service level or margin moves the decision more than the choice of model. Shelf Signal notes that observed sales stand in for demand, so this is an illustration of the trade-off, not a cost estimate.
 
-![Shelf Signal, Order planner tab: the demand distribution for one item-day with the margin-matched order (orange) and actual sales (black), and orders against actual sales over the 28 test days.](dashboard.png){width=100% fig-align="center"}
+![Shelf Signal, Order planner tab: the demand distribution for one item-day with the margin-matched order (orange) and actual sales (black), and orders against actual sales over the 28 test days. Live at <https://jing0712.github.io/shelf-signal/#planner>; built on Jing Chang's original Shelf Signal (<https://github.com/Jing0712/shelf-signal>).](dashboard.png){width=100% fig-align="center"}
 
 # Conclusions
 
@@ -492,7 +489,9 @@ The inventory backtest complements our newsvendor analysis. With no safety stock
 # Limitations and next steps
 
 - **One test window.** Rankings between close models could change in another month, as Shelf Signal's validation and test windows show. A rolling-origin backtest over several earlier 28-day windows is the next step.
-- **Claude on a subset, with residual contamination risk.** Its results rest on 112 series. The blind test reduces identity cues but cannot guarantee the data was not seen in training, and its forecasts can vary between runs.
+- **Generalisation.** All results come from one retailer, one category (food), four California stores and one month in 2016. Rankings may differ for other categories, regions, retailers or more recent data, and for newer or larger versions of the AI models.
+- **Claude on a subset, with residual contamination risk.** Its results rest on 112 series. The blind test reduces identity cues but cannot guarantee the data was not seen in training, and its forecasts can vary between runs. A stronger check is a hidden test: data Claude cannot have seen, such as sales published after its training cutoff or a retailer's private data.
+- **Claude is costly, and its explanations were not valued.** Every series is a paid request, so a daily run over thousands of items costs far more than the other models, which run free on a laptop. Claude also returns a written explanation with each forecast; we did not measure whether those explanations improve decisions enough to justify the cost.
 - **Item-level gaps not formally tested.** "Close" at item level is descriptive.
 - **Simple LightGBM.** One fixed setting; M5 winners tuned and ensembled many models.
 - **Sales are not demand.** A stocked-out shelf records zero sales, so demand is understated for every model.

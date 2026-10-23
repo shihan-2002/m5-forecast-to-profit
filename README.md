@@ -18,7 +18,7 @@ Retail forecasting has to balance **accuracy, efficiency and business value**.
 
 So we ask:
 
-1. **Can pre-trained AI forecast as well as traditional methods, and faster?**
+1. **Can pre-trained AI forecast as well as traditional methods, at a practical cost?**
 2. **Does a better forecast mean a better replenishment decision?**
 
 ## 2. Data: 5,748 daily series, one 28-day test window

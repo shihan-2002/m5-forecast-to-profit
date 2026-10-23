@@ -2331,14 +2331,14 @@ body { line-height: 1.15; }
   <li><a href="#computational-efficiency" id="toc-computational-efficiency" class="nav-link" data-scroll-target="#computational-efficiency">Computational efficiency</a></li>
   </ul></li>
   <li><a href="#business-insight-the-best-order-is-not-the-forecast-the-newsvendor-problem" id="toc-business-insight-the-best-order-is-not-the-forecast-the-newsvendor-problem" class="nav-link" data-scroll-target="#business-insight-the-best-order-is-not-the-forecast-the-newsvendor-problem">Business insight: the best order is not the forecast (the newsvendor problem)</a></li>
-  <li><a href="#interactive-dashboard-shelf-signal" id="toc-interactive-dashboard-shelf-signal" class="nav-link" data-scroll-target="#interactive-dashboard-shelf-signal">Interactive dashboard: Shelf Signal</a>
-  <ul class="collapse">
-  <li><a href="#evidence-from-the-original-shelf-signal" id="toc-evidence-from-the-original-shelf-signal" class="nav-link" data-scroll-target="#evidence-from-the-original-shelf-signal">Evidence from the original Shelf Signal</a></li>
-  </ul></li>
   <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions">Conclusions</a></li>
   <li><a href="#limitations-and-next-steps" id="toc-limitations-and-next-steps" class="nav-link" data-scroll-target="#limitations-and-next-steps">Limitations and next steps</a></li>
   <li><a href="#use-of-ai-tools-and-reproducibility" id="toc-use-of-ai-tools-and-reproducibility" class="nav-link" data-scroll-target="#use-of-ai-tools-and-reproducibility">Use of AI tools and reproducibility</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#appendix-a-interactive-dashboard-shelf-signal" id="toc-appendix-a-interactive-dashboard-shelf-signal" class="nav-link" data-scroll-target="#appendix-a-interactive-dashboard-shelf-signal">Appendix A: Interactive dashboard (Shelf Signal)</a>
+  <ul class="collapse">
+  <li><a href="#a.1-evidence-from-the-original-shelf-signal" id="toc-a.1-evidence-from-the-original-shelf-signal" class="nav-link" data-scroll-target="#a.1-evidence-from-the-original-shelf-signal">A.1 Evidence from the original Shelf Signal</a></li>
+  </ul></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="report.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
 </div>
@@ -2405,8 +2405,8 @@ body { line-height: 1.15; }
 <p>We use the M5 data <span class="citation" data-cites="kaggle_m5">(<a href="#ref-kaggle_m5" role="doc-biblioref">University of Nicosia and Walmart 2020</a>)</span> for the food category of Walmart’s four California stores: 5,748 daily item-store series, with weekly prices, holidays and events, and SNAP (food-stamp) payment days.</p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
+<col style="width: 30%">
+<col style="width: 69%">
 </colgroup>
 <tbody>
 <tr class="odd">
@@ -2467,11 +2467,11 @@ Figure 2: Average daily sales by weekday, indexed to the average day (= 100).
 <h2 class="anchored" data-anchor-id="models">Models</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
+<col style="width: 18%">
+<col style="width: 15%">
+<col style="width: 14%">
+<col style="width: 19%">
+<col style="width: 31%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -2834,9 +2834,9 @@ Table 3: Accuracy on the 100 sampled items (same items for every model).
 <p><strong>How Claude differs from Chronos.</strong> Both are transformer models used zero-shot, but they are different tools:</p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
+<col style="width: 22%">
+<col style="width: 38%">
+<col style="width: 38%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -2881,9 +2881,9 @@ Table 3: Accuracy on the 100 sampled items (same items for every model).
 <p><strong>Risks of using an LLM, and how we handled them.</strong></p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
+<col style="width: 28%">
+<col style="width: 35%">
+<col style="width: 35%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -3027,15 +3027,91 @@ Figure 9: Profit difference against LightGBM over 28 days, with 95% bootstrap i
 <li><strong>Accuracy is measured where orders are not placed.</strong> LightGBM’s accuracy lead is at aggregate levels, but stores order item by item, where the models are close. Models should be chosen on the metric that matches the decision.</li>
 <li><strong>Profit expectations should come from backtests.</strong> Both models over-predicted their own profit (at a 50% margin, LightGBM predicted $151k and earned $115k), because the simulation treats each forecast as the true average.</li>
 </ol>
+<p>To explore these trade-offs interactively, see our dashboard, Shelf Signal, at <a href="https://jing0712.github.io/shelf-signal/#planner" class="uri">https://jing0712.github.io/shelf-signal/#planner</a>: it shows every model’s forecasts for any series, and its order planner moves the order as the margin changes (Appendix A).</p>
 </section>
-<section id="interactive-dashboard-shelf-signal" class="level1">
-<h1>Interactive dashboard: Shelf Signal</h1>
+<section id="conclusions" class="level1">
+<h1>Conclusions</h1>
+<ol type="1">
+<li><strong>Traditional methods still lead on accuracy.</strong> LightGBM is the most accurate single model, AutoETS is close behind, and their simple average is the most accurate of all, a result our teammate’s Shelf Signal study reproduces on a different setting.</li>
+<li><strong>Rankings depend on the level and the window.</strong> The models differ most at store and department level, are close for single items, and close rankings can flip between test windows.</li>
+<li><strong>Chronos offers a large speed advantage</strong>: no training and 10 s for all series, but weaker overall accuracy in this study.</li>
+<li><strong>Claude matched the best traditional approach on totals, on limited evidence.</strong> It was level with the ensemble on the 12 totals and behind AutoETS on items, was tested on 112 series only, and contamination cannot be ruled out.</li>
+<li><strong>Replenishment depends on costs and uncertainty.</strong> The best order is a margin-dependent quantile of demand: ordering that quantile instead of the forecast was worth far more than switching models.</li>
+</ol>
+<p><strong>Practical recommendation:</strong> for item-level forecasts, average a statistical model (AutoETS) with LightGBM; use Chronos where speed or the lack of training data matters; fit store and department totals directly; and choose models on the metric that matches the decision they support.</p>
+</section>
+<section id="limitations-and-next-steps" class="level1">
+<h1>Limitations and next steps</h1>
+<ul>
+<li><strong>One test window.</strong> Rankings between close models could change in another month, as Shelf Signal’s validation and test windows show. A rolling-origin backtest over several earlier 28-day windows is the next step.</li>
+<li><strong>Generalisation.</strong> All results come from one retailer, one category (food), four California stores and one month in 2016. Rankings may differ for other categories, regions, retailers or more recent data, and for newer or larger versions of the AI models.</li>
+<li><strong>Claude on a subset, with residual contamination risk.</strong> Its results rest on 112 series. The blind test reduces identity cues but cannot guarantee the data was not seen in training, and its forecasts can vary between runs. A stronger check is a hidden test: data Claude cannot have seen, such as sales published after its training cutoff or a retailer’s private data.</li>
+<li><strong>Claude is costly, and its explanations were not valued.</strong> Every series is a paid request, so a daily run over thousands of items costs far more than the other models, which run free on a laptop. Claude also returns a written explanation with each forecast; we did not measure whether those explanations improve decisions enough to justify the cost.</li>
+<li><strong>Item-level gaps not formally tested.</strong> “Close” at item level is descriptive.</li>
+<li><strong>Simple LightGBM.</strong> One fixed setting; M5 winners tuned and ensembled many models.</li>
+<li><strong>Sales are not demand.</strong> A stocked-out shelf records zero sales, so demand is understated for every model.</li>
+<li><strong>Newsvendor analysis is exploratory.</strong> It assumed perishable stock, zero salvage value and, for every model except Chronos, a negative binomial demand distribution centred on the model’s forecast, with each item’s spread (variance-to-mean ratio) taken from its last 180 training days; using each model’s own uncertainty (prediction intervals, quantile regression) would make it a fuller test. A promising next step is a hybrid: the ensemble’s forecast for the level and Chronos’s quantiles for the spread, scored by profit and pinball loss at each margin.</li>
+</ul>
+</section>
+<section id="use-of-ai-tools-and-reproducibility" class="level1">
+<h1>Use of AI tools and reproducibility</h1>
+<p>AI played two roles in this project: as forecasting models under test, and as a coding and writing assistant.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 29%">
+<col style="width: 53%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Tool</th>
+<th style="text-align: center;">What we used it for</th>
+<th style="text-align: center;">How we checked it</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Chronos-Bolt (small)</td>
+<td style="text-align: center;">Zero-shot forecasts for all 5,748 series</td>
+<td style="text-align: center;">Scored on the same held-out 28 days as every other model</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Claude Opus 5.5 (API)</td>
+<td style="text-align: center;">Zero-shot forecasts for 112 series ($13.54)</td>
+<td style="text-align: center;">Fixed JSON format, 28-day check and retries; named vs blind test; every prompt and response saved in <code>outputs/claude_raw/</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Claude Code</td>
+<td style="text-align: center;">Data pipeline, evaluation code, charts, dashboard, slides and report drafts</td>
+<td style="text-align: center;">We reviewed all output and fixed three first-pass errors: LightGBM overfitting on the item ID, Chronos’s median used as its mean, and an unfair summed-vs-direct comparison of totals. Every number in the report is read from the pipeline’s output files</td>
+</tr>
+</tbody>
+</table>
+<p>The forecasting pipeline is written in Python (<code>src/</code>); this report is written in R and reads its CSV outputs (<code>outputs/results/report/</code>). All code, results and the dashboard source are at <a href="https://github.com/shihan-2002/m5-forecast-to-profit" class="uri">https://github.com/shihan-2002/m5-forecast-to-profit</a>, whose README lists the steps to reproduce everything.</p>
+</section>
+<section id="references" class="level1 unnumbered">
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-ansari2024" class="csl-entry" role="listitem">
+Ansari, Abdul Fatir, Lorenzo Stella, Caner Turkmen, et al. 2024. <span>“Chronos: Learning the Language of Time Series.”</span> <em>Transactions on Machine Learning Research</em>. <a href="https://arxiv.org/abs/2403.07815">https://arxiv.org/abs/2403.07815</a>.
+</div>
+<div id="ref-makridakis2022" class="csl-entry" role="listitem">
+Makridakis, Spyros, Evangelos Spiliotis, and Vassilios Assimakopoulos. 2022. <span>“M5 Accuracy Competition: Results, Findings, and Conclusions.”</span> <em>International Journal of Forecasting</em> 38 (4): 1346–64. <a href="https://doi.org/10.1016/j.ijforecast.2021.11.013">https://doi.org/10.1016/j.ijforecast.2021.11.013</a>.
+</div>
+<div id="ref-kaggle_m5" class="csl-entry" role="listitem">
+University of Nicosia and Walmart. 2020. <span>“M5 Forecasting – Accuracy.”</span> Kaggle competition. <a href="https://www.kaggle.com/competitions/m5-forecasting-accuracy">https://www.kaggle.com/competitions/m5-forecasting-accuracy</a>.
+</div>
+</div>
+<div style="page-break-after: always;"></div>
+</section>
+<section id="appendix-a-interactive-dashboard-shelf-signal" class="level1 unnumbered">
+<h1 class="unnumbered">Appendix A: Interactive dashboard (Shelf Signal)</h1>
 <p>We built <strong>Shelf Signal</strong>, an interactive version of this analysis, by extending our teammate’s original Shelf Signal dashboard (code at <a href="https://github.com/Jing0712/shelf-signal" class="uri">https://github.com/Jing0712/shelf-signal</a>) with this project’s models and results. It is live at <a href="https://jing0712.github.io/shelf-signal/#planner" class="uri">https://jing0712.github.io/shelf-signal/#planner</a> (the link opens on the Order planner) and is a single self-contained web page (<code>docs/index.html</code> in the project repository) with seven tabs:</p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
+<col style="width: 20%">
+<col style="width: 61%">
+<col style="width: 17%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -3078,7 +3154,7 @@ Figure 9: Profit difference against LightGBM over 28 days, with 95% bootstrap i
 <tr class="odd">
 <td style="text-align: center;">About</td>
 <td style="text-align: center;">Method, limitations and credits</td>
-<td style="text-align: center;">9</td>
+<td style="text-align: center;">8</td>
 </tr>
 </tbody>
 </table>
@@ -3091,8 +3167,8 @@ Figure 9: Profit difference against LightGBM over 28 days, with 95% bootstrap i
 <li><strong>Order planner:</strong> choose an item, a model and a margin; move the margin slider to see the order move along the demand distribution and how each model’s orders would have done over the 28 test days.</li>
 <li><strong>Ask the analyst:</strong> click a question for a short answer drawn from the results.</li>
 </ol>
-<section id="evidence-from-the-original-shelf-signal" class="level2">
-<h2 class="anchored" data-anchor-id="evidence-from-the-original-shelf-signal">Evidence from the original Shelf Signal</h2>
+<section id="a.1-evidence-from-the-original-shelf-signal" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="a.1-evidence-from-the-original-shelf-signal">A.1 Evidence from the original Shelf Signal</h2>
 <p>Shelf Signal studies a smaller, complementary setting: one store (CA_1), 15 high-selling food items plus the category total, and four models (seasonal naive, Holt-Winters ETS, gradient-boosted trees with Poisson loss, and their average), evaluated on a validation window and a final test window. Three of its results strengthen ours.</p>
 <div class="cell" data-layout-align="center">
 <div id="tbl-tm" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-layout-align="center">
@@ -3165,80 +3241,6 @@ Figure 10: Shelf Signal inventory backtest (15 items, store CA_1, 28 days): rai
 </figure>
 </div>
 </section>
-</section>
-<section id="conclusions" class="level1">
-<h1>Conclusions</h1>
-<ol type="1">
-<li><strong>Traditional methods still lead on accuracy.</strong> LightGBM is the most accurate single model, AutoETS is close behind, and their simple average is the most accurate of all, a result our teammate’s Shelf Signal study reproduces on a different setting.</li>
-<li><strong>Rankings depend on the level and the window.</strong> The models differ most at store and department level, are close for single items, and close rankings can flip between test windows.</li>
-<li><strong>Chronos offers a large speed advantage</strong>: no training and 10 s for all series, but weaker overall accuracy in this study.</li>
-<li><strong>Claude matched the best traditional approach on totals, on limited evidence.</strong> It was level with the ensemble on the 12 totals and behind AutoETS on items, was tested on 112 series only, and contamination cannot be ruled out.</li>
-<li><strong>Replenishment depends on costs and uncertainty.</strong> The best order is a margin-dependent quantile of demand: ordering that quantile instead of the forecast was worth far more than switching models.</li>
-</ol>
-<p><strong>Practical recommendation:</strong> for item-level forecasts, average a statistical model (AutoETS) with LightGBM; use Chronos where speed or the lack of training data matters; fit store and department totals directly; and choose models on the metric that matches the decision they support.</p>
-</section>
-<section id="limitations-and-next-steps" class="level1">
-<h1>Limitations and next steps</h1>
-<ul>
-<li><strong>One test window.</strong> Rankings between close models could change in another month, as Shelf Signal’s validation and test windows show. A rolling-origin backtest over several earlier 28-day windows is the next step.</li>
-<li><strong>Generalisation.</strong> All results come from one retailer, one category (food), four California stores and one month in 2016. Rankings may differ for other categories, regions, retailers or more recent data, and for newer or larger versions of the AI models.</li>
-<li><strong>Claude on a subset, with residual contamination risk.</strong> Its results rest on 112 series. The blind test reduces identity cues but cannot guarantee the data was not seen in training, and its forecasts can vary between runs. A stronger check is a hidden test: data Claude cannot have seen, such as sales published after its training cutoff or a retailer’s private data.</li>
-<li><strong>Claude is costly, and its explanations were not valued.</strong> Every series is a paid request, so a daily run over thousands of items costs far more than the other models, which run free on a laptop. Claude also returns a written explanation with each forecast; we did not measure whether those explanations improve decisions enough to justify the cost.</li>
-<li><strong>Item-level gaps not formally tested.</strong> “Close” at item level is descriptive.</li>
-<li><strong>Simple LightGBM.</strong> One fixed setting; M5 winners tuned and ensembled many models.</li>
-<li><strong>Sales are not demand.</strong> A stocked-out shelf records zero sales, so demand is understated for every model.</li>
-<li><strong>Newsvendor analysis is exploratory.</strong> It assumed perishable stock, zero salvage value and, for every model except Chronos, a negative binomial demand distribution centred on the model’s forecast, with each item’s spread (variance-to-mean ratio) taken from its last 180 training days; using each model’s own uncertainty (prediction intervals, quantile regression) would make it a fuller test. A promising next step is a hybrid: the ensemble’s forecast for the level and Chronos’s quantiles for the spread, scored by profit and pinball loss at each margin.</li>
-</ul>
-</section>
-<section id="use-of-ai-tools-and-reproducibility" class="level1">
-<h1>Use of AI tools and reproducibility</h1>
-<p>AI played two roles in this project: as forecasting models under test, and as a coding and writing assistant.</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: center;">Tool</th>
-<th style="text-align: center;">What we used it for</th>
-<th style="text-align: center;">How we checked it</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: center;">Chronos-Bolt (small)</td>
-<td style="text-align: center;">Zero-shot forecasts for all 5,748 series</td>
-<td style="text-align: center;">Scored on the same held-out 28 days as every other model</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Claude Opus 5.5 (API)</td>
-<td style="text-align: center;">Zero-shot forecasts for 112 series ($13.54)</td>
-<td style="text-align: center;">Fixed JSON format, 28-day check and retries; named vs blind test; every prompt and response saved in <code>outputs/claude_raw/</code></td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Claude Code</td>
-<td style="text-align: center;">Data pipeline, evaluation code, charts, dashboard, slides and report drafts</td>
-<td style="text-align: center;">We reviewed all output and fixed three first-pass errors: LightGBM overfitting on the item ID, Chronos’s median used as its mean, and an unfair summed-vs-direct comparison of totals. Every number in the report is read from the pipeline’s output files</td>
-</tr>
-</tbody>
-</table>
-<p>The forecasting pipeline is written in Python (<code>src/</code>); this report is written in R and reads its CSV outputs (<code>outputs/results/report/</code>). All code, results and the dashboard source are at <a href="https://github.com/shihan-2002/m5-forecast-to-profit" class="uri">https://github.com/shihan-2002/m5-forecast-to-profit</a>, whose README lists the steps to reproduce everything.</p>
-</section>
-<section id="references" class="level1 unnumbered">
-<h1 class="unnumbered">References</h1>
-<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
-<div id="ref-ansari2024" class="csl-entry" role="listitem">
-Ansari, Abdul Fatir, Lorenzo Stella, Caner Turkmen, et al. 2024. <span>“Chronos: Learning the Language of Time Series.”</span> <em>Transactions on Machine Learning Research</em>. <a href="https://arxiv.org/abs/2403.07815">https://arxiv.org/abs/2403.07815</a>.
-</div>
-<div id="ref-makridakis2022" class="csl-entry" role="listitem">
-Makridakis, Spyros, Evangelos Spiliotis, and Vassilios Assimakopoulos. 2022. <span>“M5 Accuracy Competition: Results, Findings, and Conclusions.”</span> <em>International Journal of Forecasting</em> 38 (4): 1346–64. <a href="https://doi.org/10.1016/j.ijforecast.2021.11.013">https://doi.org/10.1016/j.ijforecast.2021.11.013</a>.
-</div>
-<div id="ref-kaggle_m5" class="csl-entry" role="listitem">
-University of Nicosia and Walmart. 2020. <span>“M5 Forecasting – Accuracy.”</span> Kaggle competition. <a href="https://www.kaggle.com/competitions/m5-forecasting-accuracy">https://www.kaggle.com/competitions/m5-forecasting-accuracy</a>.
-</div>
-</div>
 </section>
 
 </main>

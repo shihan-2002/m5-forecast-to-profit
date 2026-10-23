@@ -500,7 +500,13 @@ The inventory backtest complements our newsvendor analysis. With no safety stock
 
 # Use of AI tools and reproducibility
 
-AI appears in two roles. **As forecasting models under test:** Chronos-Bolt (small) for all 5,748 series and Claude Opus 5.5 for 112 series (API cost \$`r sprintf("%.2f", claude_cost)`; every prompt and response is saved in `outputs/claude_raw/`). **As a coding assistant:** we used Claude Code to write the data pipeline, evaluation code and charts, to build the dashboard and slides, and to draft this report. We reviewed its output and corrected several first-pass choices (LightGBM overfitting on the item ID, Chronos's median being used as its mean, and an unfair comparison of summed and direct totals). Every number in this report is read from the pipeline's output files.
+AI played two roles in this project: as forecasting models under test, and as a coding and writing assistant.
+
+| Tool | What we used it for | How we checked it |
+|:---:|:---:|:---:|
+| Chronos-Bolt (small) | Zero-shot forecasts for all 5,748 series | Scored on the same held-out 28 days as every other model |
+| Claude Opus 5.5 (API) | Zero-shot forecasts for 112 series (\$`r sprintf("%.2f", claude_cost)`) | Fixed JSON format, 28-day check and retries; named vs blind test; every prompt and response saved in `outputs/claude_raw/` |
+| Claude Code | Data pipeline, evaluation code, charts, dashboard, slides and report drafts | We reviewed all output and fixed three first-pass errors: LightGBM overfitting on the item ID, Chronos's median used as its mean, and an unfair summed-vs-direct comparison of totals. Every number in the report is read from the pipeline's output files |
 
 The forecasting pipeline is written in Python (`src/`); this report is written in R and reads its CSV outputs (`outputs/results/report/`). All code, results and the dashboard source are at <https://github.com/shihan-2002/m5-forecast-to-profit>, whose README lists the steps to reproduce everything.
 

@@ -3190,7 +3190,38 @@ Figure 10: Shelf Signal inventory backtest (15 items, store CA_1, 28 days): rai
 </section>
 <section id="use-of-ai-tools-and-reproducibility" class="level1">
 <h1>Use of AI tools and reproducibility</h1>
-<p>AI appears in two roles. <strong>As forecasting models under test:</strong> Chronos-Bolt (small) for all 5,748 series and Claude Opus 5.5 for 112 series (API cost $13.54; every prompt and response is saved in <code>outputs/claude_raw/</code>). <strong>As a coding assistant:</strong> we used Claude Code to write the data pipeline, evaluation code and charts, to build the dashboard and slides, and to draft this report. We reviewed its output and corrected several first-pass choices (LightGBM overfitting on the item ID, Chronos’s median being used as its mean, and an unfair comparison of summed and direct totals). Every number in this report is read from the pipeline’s output files.</p>
+<p>AI played two roles in this project: as forecasting models under test, and as a coding and writing assistant.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Tool</th>
+<th style="text-align: center;">What we used it for</th>
+<th style="text-align: center;">How we checked it</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Chronos-Bolt (small)</td>
+<td style="text-align: center;">Zero-shot forecasts for all 5,748 series</td>
+<td style="text-align: center;">Scored on the same held-out 28 days as every other model</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Claude Opus 5.5 (API)</td>
+<td style="text-align: center;">Zero-shot forecasts for 112 series ($13.54)</td>
+<td style="text-align: center;">Fixed JSON format, 28-day check and retries; named vs blind test; every prompt and response saved in <code>outputs/claude_raw/</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Claude Code</td>
+<td style="text-align: center;">Data pipeline, evaluation code, charts, dashboard, slides and report drafts</td>
+<td style="text-align: center;">We reviewed all output and fixed three first-pass errors: LightGBM overfitting on the item ID, Chronos’s median used as its mean, and an unfair summed-vs-direct comparison of totals. Every number in the report is read from the pipeline’s output files</td>
+</tr>
+</tbody>
+</table>
 <p>The forecasting pipeline is written in Python (<code>src/</code>); this report is written in R and reads its CSV outputs (<code>outputs/results/report/</code>). All code, results and the dashboard source are at <a href="https://github.com/shihan-2002/m5-forecast-to-profit" class="uri">https://github.com/shihan-2002/m5-forecast-to-profit</a>, whose README lists the steps to reproduce everything.</p>
 </section>
 <section id="references" class="level1 unnumbered">

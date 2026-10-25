@@ -10,7 +10,7 @@
 <meta name="author" content="Shihan Wang">
 <meta name="author" content="Jing Chang">
 <meta name="author" content="Rachel Liu">
-<meta name="dcterms.date" content="2026-10-23">
+<meta name="dcterms.date" content="2026-10-25">
 
 <title>Can AI Foundation Models Beat Traditional Statistical Models?</title>
 <style>
@@ -2368,7 +2368,7 @@ p, li { text-align: left; }
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 23, 2026</p>
+      <p class="date">October 25, 2026</p>
     </div>
   </div>
   
@@ -3064,7 +3064,7 @@ Figure 9: Profit difference against LightGBM over 28 days, with 95% bootstrap i
 <li><strong>Accuracy is measured where orders are not placed.</strong> LightGBM’s accuracy lead is at aggregate levels, but stores order item by item, where the models are close. Models should be chosen on the metric that matches the decision.</li>
 <li><strong>Profit expectations should come from backtests.</strong> Both models over-predicted their own profit (at a 50% margin, LightGBM predicted $151k and earned $115k), because the simulation treats each forecast as the true average.</li>
 </ol>
-<p>To explore these trade-offs interactively, see our dashboard, Shelf Signal, at <a href="https://jing0712.github.io/shelf-signal/#planner" class="uri">https://jing0712.github.io/shelf-signal/#planner</a>: it shows every model’s forecasts for any series, and its order planner moves the order as the margin changes (Appendix A).</p>
+<p>To explore these trade-offs interactively, see our dashboard, Shelf Signal v2, at <a href="https://shihan-2002.github.io/shelf-signal-dashboard/#planner" class="uri">https://shihan-2002.github.io/shelf-signal-dashboard/#planner</a>: it shows every model’s forecasts for any series, and its order planner moves the order as the margin changes (Appendix A).</p>
 </section>
 <section id="conclusions" class="level1">
 <h1>Conclusions</h1>
@@ -3103,7 +3103,7 @@ University of Nicosia and Walmart. 2020. <span>“M5 Forecasting – Accuracy.�
 </section>
 <section id="appendix-a-interactive-dashboard-shelf-signal" class="level1 unnumbered">
 <h1 class="unnumbered">Appendix A: Interactive dashboard (Shelf Signal)</h1>
-<p>We built <strong>Shelf Signal</strong>, an interactive version of this analysis, by extending our teammate’s original Shelf Signal dashboard (code at <a href="https://github.com/Jing0712/shelf-signal" class="uri">https://github.com/Jing0712/shelf-signal</a>) with this project’s models and results. It is live at <a href="https://jing0712.github.io/shelf-signal/#planner" class="uri">https://jing0712.github.io/shelf-signal/#planner</a> (the link opens on the Order planner) and is a single self-contained web page (<code>docs/index.html</code> in the project repository) with seven tabs:</p>
+<p>Our dashboard, <strong>Shelf Signal v2</strong>, builds on our teammate Jing Chang’s original <strong>Shelf Signal</strong> dashboard (<a href="https://jing0712.github.io/shelf-signal/" class="uri">https://jing0712.github.io/shelf-signal/</a>; code at <a href="https://github.com/Jing0712/shelf-signal" class="uri">https://github.com/Jing0712/shelf-signal</a>), which first studied store CA_1 with 15 items, its own models and validation, and a live Claude analyst (Section A.1). We extended it with this project’s models, results and a live analyst of our own. It is live at <a href="https://shihan-2002.github.io/shelf-signal-dashboard/#planner" class="uri">https://shihan-2002.github.io/shelf-signal-dashboard/#planner</a> (the link opens on the Order planner) and is a single self-contained web page (<code>docs/index.html</code> in the project repository) with seven tabs:</p>
 <div id="tbl-tabs" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-tabs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -3151,7 +3151,7 @@ Table 9: The dashboard’s seven tabs.
 </tr>
 <tr class="even">
 <td style="text-align: center;">Ask the analyst</td>
-<td style="text-align: center;">Answers to 11 common questions, with numbers drawn from the results</td>
+<td style="text-align: center;">A question box answered live by Claude Sonnet 5.5 from the project’s results, plus five sample questions answered instantly</td>
 <td style="text-align: center;">All</td>
 </tr>
 <tr class="odd">
@@ -3164,14 +3164,14 @@ Table 9: The dashboard’s seven tabs.
 </div>
 </figure>
 </div>
-<p>It covers 134 series: every aggregate level, Claude’s 100 sampled items, and the 15 store-CA_1 items from the original Shelf Signal. Forecasts are precomputed by our pipeline; only the order quantities are calculated in the browser, and actual sales are used only to score results afterwards.</p>
+<p>It covers 134 series: every aggregate level, Claude’s 100 sampled items, and the 15 store-CA_1 items from the original Shelf Signal. Forecasts are precomputed by our pipeline; only the order quantities are calculated in the browser, and actual sales are used only to score results afterwards. The live analyst runs on a small Cloudflare Worker that holds the API key, so the key never appears in the public page; it answers only from a fixed summary of this report’s results and limits each visitor to 10 questions a minute.</p>
 <p><strong>How to use it.</strong></p>
 <ol type="1">
 <li>Open the link in any browser; nothing needs to be installed. The page also works offline from <code>docs/index.html</code>.</li>
 <li><strong>Forecast explorer:</strong> choose a level (for example <em>Store x dept</em>) and a series, then switch models on and off to compare them with actual sales.</li>
 <li><strong>AI lab:</strong> compare Chronos and Claude, see the named-vs-blind scatter, and open <em>Read Claude’s reasoning</em> for any series.</li>
 <li><strong>Order planner:</strong> choose an item, a model and a margin; move the margin slider to see the order move along the demand distribution and how each model’s orders would have done over the 28 test days.</li>
-<li><strong>Ask the analyst:</strong> click a question for a short answer drawn from the results.</li>
+<li><strong>Ask the analyst:</strong> type your own question for a live answer from Claude Sonnet 5.5, or click a sample question for an instant answer.</li>
 </ol>
 <section id="a.1-evidence-from-the-original-shelf-signal" class="level2 unnumbered">
 <h2 class="unnumbered anchored" data-anchor-id="a.1-evidence-from-the-original-shelf-signal">A.1 Evidence from the original Shelf Signal</h2>
@@ -3277,6 +3277,11 @@ Table 11: AI tools used in this project, and how we checked them.
 <td style="text-align: center;">Fixed JSON format, 28-day check and retries; named vs blind test; every prompt and response saved in <code>outputs/claude_raw/</code></td>
 </tr>
 <tr class="odd">
+<td style="text-align: center;">Claude Sonnet 5.5 (API)</td>
+<td style="text-align: center;">Live answers in the dashboard’s Ask the analyst</td>
+<td style="text-align: center;">Answers only from a fixed summary of this report’s results; sample answers checked against the report</td>
+</tr>
+<tr class="even">
 <td style="text-align: center;">Claude Code</td>
 <td style="text-align: center;">Data pipeline, evaluation code, charts, dashboard, slides and report drafts</td>
 <td style="text-align: center;">We reviewed all output and fixed three first-pass errors: LightGBM overfitting on the item ID, Chronos’s median used as its mean, and an unfair summed-vs-direct comparison of totals. Every number in the report is read from the pipeline’s output files</td>

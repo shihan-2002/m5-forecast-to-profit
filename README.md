@@ -7,7 +7,7 @@ UCLA Anderson, Time Series Analysis and Forecasting (Dr. William Yu), fall 2026
 
 | Final report | Slide deck | Live dashboard | Code |
 |---|---|---|---|
-| [PDF](report/report.pdf) · [source](report/report.qmd) | [PowerPoint](presentation/Group3_Forecasting_Presentation.pptx) · [PDF](presentation/Group3_Forecasting_Presentation.pdf) | [Shelf Signal](https://jing0712.github.io/shelf-signal/#planner) | [`src/`](src/) (Python) · [`report/`](report/) (R) |
+| [PDF](report/report.pdf) · [source](report/report.qmd) | [PowerPoint](presentation/Group3_Forecasting_Presentation.pptx) · [PDF](presentation/Group3_Forecasting_Presentation.pdf) | [Shelf Signal v2](https://shihan-2002.github.io/shelf-signal-dashboard/#planner) | [`src/`](src/) (Python) · [`report/`](report/) (R) |
 
 ## 1. Why this question
 
@@ -123,11 +123,12 @@ We turned the ensemble's forecasts into daily orders for every item and scored t
 
 ## 9. Demo: Shelf Signal dashboard
 
-**[Open the live dashboard](https://jing0712.github.io/shelf-signal/#planner)**: Shelf Signal v2, built by our teammate Jing Chang ([code](https://github.com/Jing0712/shelf-signal)), brings every model in this project into one interactive page.
+**[Open the live dashboard](https://shihan-2002.github.io/shelf-signal-dashboard/#planner)**: Shelf Signal v2 brings every model in this project into one interactive page. It builds on our teammate Jing Chang's original [Shelf Signal](https://jing0712.github.io/shelf-signal/) ([code](https://github.com/Jing0712/shelf-signal)), which first studied store CA_1 with 15 items. Source: [`shelf-signal-dashboard`](https://github.com/shihan-2002/shelf-signal-dashboard) (the page, plus the `worker/` behind the live analyst).
 
 - **Forecast explorer:** pick any total, store, department or item and compare every model against actual sales.
 - **AI lab:** Claude's own reasoning for each series, and the named-vs-blind test.
 - **Order planner:** change the margin and watch the order move between P20 and P80, with profit scored for every model.
+- **Ask the analyst:** type your own question for a live answer from Claude Sonnet 5.5, or pick one of five sample questions.
 
 ## How to reproduce
 

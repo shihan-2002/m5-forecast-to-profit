@@ -422,7 +422,7 @@ nv_boot |>
 3. **Accuracy is measured where orders are not placed.** LightGBM's accuracy lead is at aggregate levels, but stores order item by item, where the models are close. Models should be chosen on the metric that matches the decision.
 4. **Profit expectations should come from backtests.** Both models over-predicted their own profit (at a 50% margin, LightGBM predicted \$`r round(nv_pred$predicted[nv_pred$margin == 0.5 & nv_pred$model == "LightGBM"] / 1000)`k and earned \$`r round(nv_pred$actual[nv_pred$margin == 0.5 & nv_pred$model == "LightGBM"] / 1000)`k), because the simulation treats each forecast as the true average.
 
-To explore these trade-offs interactively, see our dashboard, Shelf Signal, at <https://jing0712.github.io/shelf-signal/#planner>: it shows every model's forecasts for any series, and its order planner moves the order as the margin changes (Appendix A).
+To explore these trade-offs interactively, see our dashboard, Shelf Signal v2, at <https://shihan-2002.github.io/shelf-signal-dashboard/#planner>: it shows every model's forecasts for any series, and its order planner moves the order as the margin changes (Appendix A).
 
 # Conclusions
 
@@ -450,7 +450,7 @@ To explore these trade-offs interactively, see our dashboard, Shelf Signal, at <
 
 # Appendix A: Interactive dashboard (Shelf Signal) {.unnumbered}
 
-We built **Shelf Signal**, an interactive version of this analysis, by extending our teammate's original Shelf Signal dashboard (code at <https://github.com/Jing0712/shelf-signal>) with this project's models and results. It is live at <https://jing0712.github.io/shelf-signal/#planner> (the link opens on the Order planner) and is a single self-contained web page (`docs/index.html` in the project repository) with seven tabs:
+Our dashboard, **Shelf Signal v2**, builds on our teammate Jing Chang's original **Shelf Signal** dashboard (<https://jing0712.github.io/shelf-signal/>; code at <https://github.com/Jing0712/shelf-signal>), which first studied store CA_1 with 15 items, its own models and validation, and a live Claude analyst (Section A.1). We extended it with this project's models, results and a live analyst of our own. It is live at <https://shihan-2002.github.io/shelf-signal-dashboard/#planner> (the link opens on the Order planner) and is a single self-contained web page (`docs/index.html` in the project repository) with seven tabs:
 
 | Tab | What it shows | Report section |
 |:------------:|:----------------------------------------:|:----------:|
@@ -459,12 +459,12 @@ We built **Shelf Signal**, an interactive version of this analysis, by extending
 | Model comparison | Accuracy, accuracy by level, run time, and which model wins each item | 5.1, 5.4 |
 | AI lab | Chronos vs Claude, the named-vs-blind test, and Claude's written reasoning for each series | 5.3 |
 | Order planner | Choose an item, a model and a margin; the order moves along the forecast demand distribution, and profit over 28 days is scored for every model | 6 |
-| Ask the analyst | Answers to 11 common questions, with numbers drawn from the results | All |
+| Ask the analyst | A question box answered live by Claude Sonnet 5.5 from the project's results, plus five sample questions answered instantly | All |
 | About | Method, limitations and credits | 8 |
 
 : The dashboard's seven tabs. {#tbl-tabs}
 
-It covers 134 series: every aggregate level, Claude's 100 sampled items, and the 15 store-CA_1 items from the original Shelf Signal. Forecasts are precomputed by our pipeline; only the order quantities are calculated in the browser, and actual sales are used only to score results afterwards.
+It covers 134 series: every aggregate level, Claude's 100 sampled items, and the 15 store-CA_1 items from the original Shelf Signal. Forecasts are precomputed by our pipeline; only the order quantities are calculated in the browser, and actual sales are used only to score results afterwards. The live analyst runs on a small Cloudflare Worker that holds the API key, so the key never appears in the public page; it answers only from a fixed summary of this report's results and limits each visitor to 10 questions a minute.
 
 **How to use it.**
 
@@ -472,7 +472,7 @@ It covers 134 series: every aggregate level, Claude's 100 sampled items, and the
 2. **Forecast explorer:** choose a level (for example *Store x dept*) and a series, then switch models on and off to compare them with actual sales.
 3. **AI lab:** compare Chronos and Claude, see the named-vs-blind scatter, and open *Read Claude's reasoning* for any series.
 4. **Order planner:** choose an item, a model and a margin; move the margin slider to see the order move along the demand distribution and how each model's orders would have done over the 28 test days.
-5. **Ask the analyst:** click a question for a short answer drawn from the results.
+5. **Ask the analyst:** type your own question for a live answer from Claude Sonnet 5.5, or click a sample question for an instant answer.
 
 ## A.1 Evidence from the original Shelf Signal {.unnumbered}
 
@@ -524,6 +524,7 @@ AI played two roles in this project: as forecasting models under test, and as a 
 |:------------:|:----------------------:|:------------------------------------------:|
 | Chronos-Bolt (small) | Zero-shot forecasts for all 5,748 series | Scored on the same held-out 28 days as every other model |
 | Claude Opus 5.5 (API) | Zero-shot forecasts for 112 series (\$`r sprintf("%.2f", claude_cost)`) | Fixed JSON format, 28-day check and retries; named vs blind test; every prompt and response saved in `outputs/claude_raw/` |
+| Claude Sonnet 5.5 (API) | Live answers in the dashboard's Ask the analyst | Answers only from a fixed summary of this report's results; sample answers checked against the report |
 | Claude Code | Data pipeline, evaluation code, charts, dashboard, slides and report drafts | We reviewed all output and fixed three first-pass errors: LightGBM overfitting on the item ID, Chronos's median used as its mean, and an unfair summed-vs-direct comparison of totals. Every number in the report is read from the pipeline's output files |
 
 : AI tools used in this project, and how we checked them. {#tbl-ai}

@@ -42,6 +42,10 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 th{font-size:12px;color:var(--muted);font-weight:600}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 tr.sel td{background:var(--soft);font-weight:600}
+tr.top1 td{background:var(--soft);font-weight:600;box-shadow:inset 0 0 0 0 transparent}
+tr.top1 td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+tr.top3 td{background:var(--soft)}
+.badge{font-size:11px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:1px}
 .chart{position:relative;height:300px}.chart.tall{height:360px}.chart.short{height:240px}
 .reason{background:var(--soft);border-radius:8px;padding:10px 12px;font-size:14px;margin:6px 0 10px}
 ul.find{margin:6px 0 0;padding-left:18px}ul.find li{margin:4px 0}
@@ -77,12 +81,13 @@ a{color:var(--accent)}
 <label class="c">Level<select id="exLevel"></select></label>
 <label class="c">Series<select id="exSeries"></select></label>
 </div>
+<p class="note" style="margin:0 0 10px"><b>Level</b> sets how sales are added up: <b>Total</b> (all four stores), <b>Store</b> (CA_1 to CA_4), <b>Department</b> (FOODS_1 to FOODS_3, all stores), <b>Store x dept</b> (the 12 store-by-department totals, the only level with Claude and the “direct” fits) or <b>Item</b> (one item in one store: Claude's 100 sampled items plus the 15 CA_1 items from the original Shelf Signal). <b>Series</b> then picks one total or item at that level. Click the model chips to show or hide each forecast.</p>
 <div class="chips" id="exChips"></div>
 <div class="chart tall" style="margin-top:10px"><canvas id="cEx"></canvas></div>
 <p class="note" id="exNote"></p>
 </div>
 <div class="card" style="margin-top:14px"><h3>Accuracy on this series (28 test days)</h3><table id="exTable"></table>
-<p class="note">RMSSE: root mean squared error scaled by the series' naive one-day error in training; below 1 beats a naive forecast.</p></div>
+<p class="note">Sorted by RMSSE, best first; the three most accurate models are highlighted, and the lowest MAE is in bold. RMSSE: root mean squared error scaled by the series' naive one-day error in training; below 1 beats a naive forecast.</p></div>
 </section>
 
 <section class="tab" id="compare">
@@ -98,7 +103,7 @@ a{color:var(--accent)}
 <div class="grid g2">
 <div class="card"><h3>Chronos vs Claude: both pre-trained, zero-shot</h3><table>
 <tr><th></th><th>Chronos</th><th>Claude</th></tr>
-<tr><td>Trained on</td><td>Time series (~100B observations, no retail)</td><td>Text and code</td></tr>
+<tr><td>Trained on</td><td>Time series (~100B observations; M5 held out)</td><td>Text and code</td></tr>
 <tr><td>Reads our data as</td><td>Numbers</td><td>Text, one row per day</td></tr>
 <tr><td>Inputs used</td><td>Sales history</td><td>Sales history, calendar, price</td></tr>
 <tr><td>Returns</td><td>Quantiles</td><td>Forecast, percentiles and an explanation</td></tr>
@@ -139,10 +144,19 @@ a{color:var(--accent)}
 <section class="tab" id="ask">
 <div class="card">
 <h2>Ask the analyst</h2>
-<p class="note" style="margin-top:0">Pick a question. Answers are written from this project's results; numbers come from the same data as the other tabs.</p>
-<div class="chips" id="askChips" style="margin:12px 0"></div>
+<div id="liveAsk" hidden>
+<p class="note" style="margin-top:0">Ask anything about this project. Claude Sonnet 5.5 answers live from the project's results (up to 500 characters; answers take a few seconds).</p>
+<form id="askForm" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
+<input id="askInput" type="text" maxlength="500" placeholder="e.g. Why does Chronos forecast too low on sparse items?" style="flex:1 1 280px;min-width:0;font:inherit;font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)">
+<button id="askBtn" type="submit" class="chip" style="padding:8px 14px;color:var(--ink);border-color:var(--faint)">Ask</button>
+</form>
+<div class="reason" id="liveAnswer" hidden style="font-size:15px;line-height:1.6;white-space:pre-wrap"></div>
+</div>
+<h3 style="margin:18px 0 4px">Sample questions</h3>
+<p class="note" style="margin-top:0">Answered instantly from the report's findings.</p>
+<div class="chips" id="askChips" style="margin:10px 0"></div>
 <div class="reason" id="askAnswer" style="font-size:15px;line-height:1.6"></div>
-<p class="note">For your own questions, the original <a href="https://jing0712.github.io/shelf-signal/">Shelf Signal</a> has a live Claude analyst (store CA_1, 15 items).</p>
+<p class="note">For more questions, the original <a href="https://jing0712.github.io/shelf-signal/">Shelf Signal</a> has a live Claude analyst (store CA_1, 15 items).</p>
 </div>
 </section>
 
@@ -210,16 +224,19 @@ window.addEventListener("load", ()=>{ const t=(location.hash||"").slice(1); cons
              ["Claude on 12 store × dept totals", fmt(cl.WRMSSE,3), "Level with the ensemble ("+fmt(en.WRMSSE,3)+")"]];
   document.getElementById("kpis").innerHTML = k.map(([l,v,s])=>`<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="l">${s}</div></div>`).join("");
   document.getElementById("findings").innerHTML = [
-    "Traditional methods still lead on accuracy: LightGBM is the best single model, AutoETS is close, and their simple average is best overall.",
+    "Our answer: use the traditional ensemble. The average of AutoETS and LightGBM is the most accurate; LightGBM is the best single model, with AutoETS close behind.",
     "Rankings change with the level: models differ most for store and department totals and are close for single items.",
-    "Chronos needs no training and forecasts every series in seconds, but its overall accuracy is weaker here.",
-    "Claude matched the best traditional approach on store × department totals, on a small subset and with residual contamination risk.",
-    "The best order depends on the margin, not just the forecast: see the Order planner."].map(x=>`<li>${x}</li>`).join("");
+    "AI shows no clear accuracy advantage: Chronos trails the seasonal-naive benchmark, and Claude only matched the ensemble on the 12 store × department totals, tested on 112 series with residual contamination risk.",
+    "Efficiency is not a deciding factor: Chronos is fastest, but the ensemble already runs in about 3 minutes, while Claude would take hours and about $347 per run.",
+    "How you order matters more than which model you use: ordering the margin quantile instead of the forecast is worth up to $172k over 28 days. See the Order planner."].map(x=>`<li>${x}</li>`).join("");
   chart("cWeekly",{type:"line",data:{labels:D.weekly.week.map(w=>w.slice(0,7)),datasets:[{data:D.weekly.units,borderColor:css("--ink"),borderWidth:1.2,pointRadius:0}]},
     options:baseOpts({plugins:{legend:{display:false}},scales:{x:{ticks:{color:css("--muted"),maxTicksLimit:7,font:{size:11}},grid:{display:false}},y:{ticks:{color:css("--muted"),font:{size:11}},grid:{color:css("--grid")},beginAtZero:true}}})});
   chart("cWeekday",{type:"bar",data:{labels:D.weekday.map(d=>d.weekday.slice(0,3)),datasets:[{data:D.weekday.map(d=>d.index),backgroundColor:D.weekday.map(d=>/Sat|Sun/.test(d.weekday)?"#2A78D6":"#c9c8c3"),borderRadius:4}]},
     options:baseOpts({plugins:{legend:{display:false}}})});
 })();
+
+// Live analyst endpoint (Cloudflare Worker in the shelf-signal-dashboard repo, worker/). Empty = box hidden.
+const ASK_ENDPOINT = "https://shelf-signal-analyst.shihan-2002.workers.dev";
 
 // ---------- explorer
 const LEVELS = ["Total","Store","Department","Store x dept","Item"];
@@ -256,7 +273,8 @@ function renderEx(){
   note.push("Grey area left of the forecast start: last 56 training days.");
   document.getElementById("exNote").textContent=note.join(" ");
   const rows=models.map(m=>({m,...s.metrics[m]})).sort((a,b)=>(a.rmsse??9)-(b.rmsse??9));
-  document.getElementById("exTable").innerHTML="<tr><th>Model</th><th class='n'>MAE (units)</th><th class='n'>RMSSE</th></tr>"+rows.map(r=>`<tr><td><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${colOf(r.m)};margin-right:6px"></span>${NAME(r.m)}</td><td class="n">${fmt(r.mae,2)}</td><td class="n">${fmt(r.rmsse,3)}</td></tr>`).join("");
+  const bestMae=Math.min(...rows.map(r=>r.mae??Infinity));
+  document.getElementById("exTable").innerHTML="<tr><th class='n' style='width:2.5em'>Rank</th><th>Model</th><th class='n'>MAE (units)</th><th class='n'>RMSSE</th></tr>"+rows.map((r,i)=>`<tr class="${i===0?"top1":i<3?"top3":""}"><td class="n">${i<3?["1st","2nd","3rd"][i]:i+1}</td><td><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${colOf(r.m)};margin-right:6px"></span>${NAME(r.m)}${i===0?' <span class="badge">Best</span>':''}</td><td class="n"${r.mae===bestMae?' style="font-weight:700"':''}>${fmt(r.mae,2)}</td><td class="n">${fmt(r.rmsse,3)}</td></tr>`).join("");
 }
 
 // ---------- comparison
@@ -340,23 +358,32 @@ function drawAsk(){
   const t=Object.fromEntries(D.timing.map(x=>[x.model,x.wall_seconds/x.series*5748]));
   const L=D.by_level, b80=D.bootstrap.find(r=>r.margin===0.8&&/AutoARIMA/.test(r.comparison));
   const QA=[
-   ["Which model is most accurate?",`Across all 5,748 series, the unweighted average of AutoETS and LightGBM is best (WRMSSE ${w("Ensemble")}). LightGBM is the best single model (${w("LightGBM")}), with AutoETS close behind (${w("AutoETS")}). AutoARIMA (${w("AutoARIMA")}) and Chronos (${w("Chronos")}) trail the seasonal-naive benchmark (${w("SeasonalNaive")}).`],
-   ["Why does averaging AutoETS and LightGBM win?","The two models make different kinds of errors: AutoETS follows each item's own level and weekly cycle, while LightGBM learns patterns shared across all items, prices and the calendar. Averaging cancels part of each one's errors. It is a classic forecasting result, and our teammate's Shelf Signal found the same with ETS and gradient-boosted trees."],
-   ["Can AI foundation models beat traditional models?",`Not on accuracy in this study. Chronos is weaker overall (${w("Chronos")}), and Claude matched the best traditional approach on the 12 store × department totals (${fmt(ct["Claude (blind)"],3)} blind vs ${fmt(ct["Ensemble (sum of items)"],3)} for the ensemble) without beating it. Chronos is the fastest (about ${Math.round(t.Chronos)} seconds, no training), but the ensemble already runs in about ${Math.round((t.AutoETS + t.LightGBM)/60)} minutes, so speed is not what decides the choice.`],
-   ["How is Claude different from Chronos?","Both are pre-trained transformers used with no training on our data. Chronos was trained on about 100 billion time-series observations, reads our data as numbers and returns quantiles in seconds for free. Claude was trained on text, reads each day's sales as a row of text, explains its reasoning, and costs about $0.06 per series. Chronos gives the same answer on a rerun; Claude may not."],
+   ["Which model is most accurate?",`The unweighted average of AutoETS and LightGBM, across all 5,748 series (WRMSSE ${w("Ensemble")}; lower is better). LightGBM is the best single model (${w("LightGBM")}), with AutoETS close behind (${w("AutoETS")}). Their errors partly cancel: summed over all items, LightGBM runs about 1% low and AutoETS about 1.4% high, so the average lands within 0.2% of actual sales. AutoARIMA (${w("AutoARIMA")}) and Chronos (${w("Chronos")}) trail the seasonal-naive benchmark (${w("SeasonalNaive")}).`],
+   ["Can AI foundation models beat traditional models?",`Not in this study, so our answer is to use the traditional ensemble. AI shows no clear accuracy advantage: Chronos trails the seasonal-naive benchmark (${w("Chronos")} vs ${w("SeasonalNaive")}), and Claude only matched the ensemble on the 12 store × department totals (${fmt(ct["Claude (blind)"],3)} blind vs ${fmt(ct["Ensemble (sum of items)"],3)}), tested on 112 series. Efficiency is not a deciding factor: Chronos saves only about ${Math.round((t.AutoETS + t.LightGBM - t.Chronos)/60)} minutes over the ensemble, which already fits an overnight run, while Claude would take about ${(t.Claude/3600).toFixed(1)} hours and $347 per run. AI also offers limited interpretability: Chronos is a black box, and Claude's written reasoning cannot be verified.`],
+   ["Why does Chronos forecast too low?","Chronos follows each item's weekly pattern, so its total has the right shape, but it runs about 11% low. The shortfall grows with sparsity: −49% for the quarter of items that sell least, then −24%, −13%, and only −4% for the busiest quarter. For an item that sells nothing on most days, its quantiles sit near zero and the rare busy days lie above its 90th percentile, so the average of its nine quantiles misses them. Fitted directly on the store × department totals, which are not sparse, Chronos improves from 0.969 to 0.637."],
    ["Did Claude memorise the M5 data?",`We can't be sure. With names, dates and the year removed, Claude was just as accurate as with them (${fmt(ct["Claude (named)"],3)} named vs ${fmt(ct["Claude (blind)"],3)} blind on totals), so the labels gave it no advantage. But the blind test cannot guarantee contamination is excluded: the sales pattern itself could still be recognised.`],
-   ["Why do AutoARIMA and Chronos look bad on store totals?",`They forecast each item separately, and for items selling 0–2 units a day the best forecast is nearly flat. Summed over thousands of items, those flat lines miss the weekend peaks. Fitted directly on the 12 store × department totals, AutoARIMA improves to ${fmt(ct["AutoARIMA (direct)"],3)} and Chronos to ${fmt(ct["Chronos (direct)"],3)}, level with LightGBM.`],
-   ["Are the models different for a single item?",`Much less. For one item in one store, each single model is most accurate on part of the items (LightGBM ${Math.round(D.best_share.find(x=>x.model==="LightGBM").share*100)}%, AutoARIMA ${Math.round(D.best_share.find(x=>x.model==="AutoARIMA").share*100)}%), and on Claude's 100-item sample ${NAME(ci[0].model)} was best (${fmt(ci[0].WRMSSE,3)}). Daily sales of one item are mostly noise. Close is not the same as a statistical tie; we did not test those gaps formally.`],
-   ["Which model is fastest, and does it matter?",`Chronos: about ${Math.round(t.Chronos)} s for all 5,748 series, against ${Math.round(t.LightGBM)} s for LightGBM, ${Math.round(t.AutoETS)} s for AutoETS and ${Math.round(t.AutoARIMA/60)} min for AutoARIMA. Claude would take about ${(t.Claude/3600).toFixed(1)} hours and cost about $347. Every traditional model fits an overnight run on a laptop, so speed is not what decides the choice; Claude's cost is the real constraint.`],
-   ["Why isn't the best order just the forecast?","A missed sale loses the margin; an unsold unit wastes its cost. With no salvage value, profit is maximised by ordering the demand quantile equal to the gross margin: the 20th percentile for a 20% margin, the 80th for an 80% margin. So a retailer needs the whole demand distribution, not one number. Try it in the Order planner."],
-   ["Does a more accurate forecast earn more profit?",`Only sometimes. At typical margins (35–65%), profit differences between models were within chance. At an 80% margin, where stock-outs are costly, the more accurate LightGBM earned significantly more (about $${Math.abs(b80.diff/1000).toFixed(1)}k more than AutoARIMA over 28 days). Accuracy is measured largely at aggregate levels, but orders are placed item by item, where models are close.`],
-   ["How reliable are these results?","They come from one 28-day test window, and close rankings can flip between windows (our teammate's Shelf Signal saw this between its validation and test windows). Claude was tested on 112 series only. Sales also understate demand when shelves run empty. A rolling backtest over several windows is the main next step."],
+   ["Why isn't the best order just the forecast?","A missed sale loses the margin; an unsold unit wastes its cost. With no salvage value, the best order is the demand quantile equal to the margin: the 20th percentile for a 20% margin, the 80th for an 80% margin. How you order matters far more than which model you use: at a 20% margin, ordering the ensemble's forecast loses about $172k over 28 days, while ordering the margin quantile roughly breaks even; switching models changes profit by at most about $20k. Try it in the Order planner."],
   ];
   const chips=document.getElementById("askChips");
   chips.innerHTML=QA.map(([q],i)=>`<button class="chip" data-i="${i}" aria-pressed="${i===0}">${q}</button>`).join("");
   const show=i=>{document.getElementById("askAnswer").textContent=QA[i][1]; chips.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",+c.dataset.i===i));};
   chips.onclick=e=>{const c=e.target.closest(".chip"); if(c) show(+c.dataset.i);};
   show(0);
+  // Live questions go to our Cloudflare Worker, which holds the API key and calls Claude Sonnet 5.5.
+  if(!ASK_ENDPOINT) return;
+  document.getElementById("liveAsk").hidden=false;
+  const form=document.getElementById("askForm"), input=document.getElementById("askInput"), btn=document.getElementById("askBtn"), out=document.getElementById("liveAnswer");
+  form.onsubmit=async e=>{
+    e.preventDefault();
+    const question=input.value.trim(); if(!question) return;
+    btn.disabled=true; btn.textContent="Thinking…"; out.hidden=false; out.textContent="Asking the analyst…";
+    try{
+      const r=await fetch(ASK_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question})});
+      const j=await r.json().catch(()=>({}));
+      out.textContent=j.answer||j.error||"Something went wrong. Please try again.";
+    }catch(err){ out.textContent="The analyst could not be reached. Please try again, or pick a question above."; }
+    btn.disabled=false; btn.textContent="Ask";
+  };
 }
 </script>
 </body>
